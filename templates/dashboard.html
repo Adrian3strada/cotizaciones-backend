@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Dashboard</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4 col-12">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>Clientes</h3>
+                <p>Gestiona clientes y contactos</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <a href="{% url 'customers:list' %}" class="small-box-footer">Ver clientes <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+    <div class="col-lg-4 col-12">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h3>Catálogo</h3>
+                <p>Modelos de cámaras</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-camera"></i>
+            </div>
+            <a href="{% url 'catalog:list' %}" class="small-box-footer">Ver catálogo <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+    <div class="col-lg-4 col-12">
+        <div class="small-box bg-warning">
+            <div class="inner">
+                <h3>Cotizaciones</h3>
+                <p>Crear y administrar</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-file-invoice-dollar"></i>
+            </div>
+            <a href="{% url 'quotes:list' %}" class="small-box-footer">Ver cotizaciones <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Accesos rápidos</h3>
+    </div>
+    <div class="card-body">
+        <a class="btn btn-primary" href="{% url 'customers:create' %}">Nuevo cliente</a>
+        <a class="btn btn-secondary" href="{% url 'catalog:create' %}">Nuevo modelo</a>
+        <a class="btn btn-success" href="{% url 'quotes:create' %}">Nueva cotización</a>
+    </div>
+</div>
+{% endblock %}

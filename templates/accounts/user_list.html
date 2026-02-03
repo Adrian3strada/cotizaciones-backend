@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Usuarios{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Usuarios</h1>
+            </div>
+            <div class="col-sm-6 text-right">
+                {% if perms.auth.add_user %}
+                    <a class="btn btn-primary" href="{% url 'accounts:create' %}">
+                        <i class="fas fa-user-plus"></i> Nuevo usuario
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body table-responsive p-0">
+        <table class="table table-hover table-striped">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Activo</th>
+                    <th>Roles</th>
+                    <th class="text-right">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user_obj in object_list %}
+                <tr>
+                    <td>{{ user_obj.username }}</td>
+                    <td>{{ user_obj.get_full_name|default:"-" }}</td>
+                    <td>{{ user_obj.email|default:"-" }}</td>
+                    <td>
+                        {% if user_obj.is_active %}
+                            <span class="badge badge-success">Sí</span>
+                        {% else %}
+                            <span class="badge badge-secondary">No</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% for group in user_obj.groups.all %}
+                            <span class="badge badge-info">{{ group.name }}</span>
+                        {% empty %}
+                            <span class="text-muted">-</span>
+                        {% endfor %}
+                    </td>
+                    <td class="text-right">
+                        {% if perms.auth.change_user %}
+                            <a class="btn btn-sm btn-outline-primary" href="{% url 'accounts:update' user_obj.pk %}">Editar</a>
+                        {% endif %}
+                        {% if perms.auth.delete_user %}
+                            <a class="btn btn-sm btn-outline-danger" href="{% url 'accounts:delete' user_obj.pk %}">Eliminar</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6">Sin usuarios.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

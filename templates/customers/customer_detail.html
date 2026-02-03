@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle cliente{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">{{ object.name }}</h1>
+            </div>
+            <div class="col-sm-6 text-right">
+                {% if perms.customers.change_customer %}
+                <a class="btn btn-outline-primary" href="{% url 'customers:update' object.pk %}">
+                    Editar cliente
+                </a>
+                {% endif %}
+                {% if perms.customers.delete_customer %}
+                <a class="btn btn-outline-danger" href="{% url 'customers:delete' object.pk %}">
+                    Eliminar cliente
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Empresa:</strong> {{ object.name }}</p>
+                <p><strong>Web:</strong> {{ object.website|default:"-" }}</p>
+                <p><strong>Calle y No.:</strong> {{ object.street_address|default:"-" }}</p>
+                <p><strong>Colonia:</strong> {{ object.neighborhood|default:"-" }}</p>
+                <p><strong>C.P.:</strong> {{ object.postal_code|default:"-" }}</p>
+                <p><strong>Tels.:</strong> {{ object.phone|default:"-" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="card-title">Contactos</h3>
+        {% if perms.customers.add_customercontact %}
+        <a class="btn btn-sm btn-primary" href="{% url 'customers:contact_create' %}?customer={{ object.pk }}">
+            Nuevo contacto
+        </a>
+        {% endif %}
+    </div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Contacto</th>
+                    <th>Puesto</th>
+                    <th>e-mail</th>
+                    <th class="text-right">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for contact in object.contacts.all %}
+                <tr>
+                    <td>{{ contact.full_name }}</td>
+                    <td>{{ contact.position|default:"-" }}</td>
+                    <td>{{ contact.email|default:"-" }}</td>
+                    <td class="text-right">
+                        {% if perms.customers.change_customercontact %}
+                        <a class="btn btn-sm btn-outline-primary"
+                            href="{% url 'customers:contact_update' contact.pk %}">
+                            Editar
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4">Sin contactos.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

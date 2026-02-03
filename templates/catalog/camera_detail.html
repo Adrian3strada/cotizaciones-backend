@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle cámara{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">{{ object.model_code }}</h1>
+            </div>
+            <div class="col-sm-6 text-right">
+                {% if perms.catalog.change_cameramodel %}
+                    <a class="btn btn-outline-primary" href="{% url 'catalog:update' object.pk %}">Editar</a>
+                {% endif %}
+                {% if perms.catalog.delete_cameramodel %}
+                    <a class="btn btn-outline-danger" href="{% url 'catalog:delete' object.pk %}">Eliminar</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Marca:</strong> {{ object.brand|default:"-" }}</p>
+                <p><strong>Nombre:</strong> {{ object.name|default:"-" }}</p>
+                <p><strong>Precio base:</strong> {{ object.base_price }} {{ object.currency }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Descripción:</strong> {{ object.description|default:"-" }}</p>
+                <p>
+                    <strong>Ficha técnica:</strong>
+                    {% if object.datasheet_file %}
+                        <a href="{{ object.datasheet_file.url }}">Descargar</a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

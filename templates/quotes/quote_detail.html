@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle cotización{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">SCP-{{ object.quote_number|cut:"SCP-"|cut:"COT-" }}</h1>
+            </div>
+            <div class="col-sm-6 text-right">
+                {% if perms.quotes.change_quote %}
+                <a class="btn btn-outline-primary" href="{% url 'quotes:update' object.pk %}">Editar</a>
+                {% if object.status == 'DRAFT' %}
+                <form method="post" action="{% url 'quotes:send' object.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-info">Enviar</button>
+                </form>
+                {% endif %}
+                {% if object.status == 'SENT' %}
+                <form method="post" action="{% url 'quotes:mark' object.pk 'ACCEPTED' %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-success">Aceptar</button>
+                </form>
+                <form method="post" action="{% url 'quotes:mark' object.pk 'REJECTED' %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger">Rechazar</button>
+                </form>
+                {% endif %}
+                {% endif %}
+                <a class="btn btn-primary" href="{% url 'quotes:pdf' object.pk %}">Descargar PDF</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Cliente:</strong> {{ object.customer.name }}</p>
+                <p><strong>Contacto:</strong> {{ object.contact.full_name|default:"-" }}</p>
+                <p><strong>Vendedor:</strong> {{ object.sales_user.username }}</p>
+            </div>
+            <div class="col-md-6">
+                <p>
+                    <strong>Estatus:</strong>
+                    {% if object.status == 'DRAFT' %}
+                    <span class="badge badge-secondary">{{ object.get_status_display }}</span>
+                    {% elif object.status == 'SENT' %}
+                    <span class="badge badge-info">{{ object.get_status_display }}</span>
+                    {% elif object.status == 'ACCEPTED' %}
+                    <span class="badge badge-success">{{ object.get_status_display }}</span>
+                    {% elif object.status == 'REJECTED' %}
+                    <span class="badge badge-danger">{{ object.get_status_display }}</span>
+                    {% else %}
+                    <span class="badge badge-warning">{{ object.get_status_display }}</span>
+                    {% endif %}
+                </p>
+                <p><strong>Vigencia:</strong> {{ object.valid_until }}</p>
+                <p><strong>Notas:</strong> {{ object.notes|default:"-" }}</p>
+                <p><strong>Términos:</strong> {{ object.terms|default:"-" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Items</h3>
+    </div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Modelo</th>
+                    <th>Cantidad</th>
+                    <th>Notas configuración</th>
+                    <th>Precio unitario</th>
+                    <th>Subtotal línea</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in object.items.all %}
+                <tr>
+                    <td>{{ item.camera_model }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.configuration_notes|default:"-" }}</td>
+                    <td>{{ item.unit_price }}</td>
+                    <td>{{ item.line_subtotal }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">Sin items.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer">
+        <div class="row">
+            <div class="col-md-4 ml-auto">
+                <table class="table">
+                    <tr>
+                        <th>Subtotal</th>
+                        <td class="text-right">{{ object.subtotal }}</td>
+                    </tr>
+                    <tr>
+                        <th>IVA ({{ object.tax_rate }}%)</th>
+                        <td class="text-right">{{ object.tax_amount }}</td>
+                    </tr>
+                    <tr>
+                        <th>Total</th>
+                        <td class="text-right"><strong>{{ object.total }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

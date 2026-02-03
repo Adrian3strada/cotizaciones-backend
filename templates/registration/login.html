@@ -1,0 +1,70 @@
+{% extends "base_auth.html" %}
+{% load static %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="auth-layout">
+    <div class="auth-left">
+        <div class="auth-panel">
+            <div class="auth-brand">SISCONPER</div>
+            <div class="auth-welcome">Welcome</div>
+            <form method="post" class="auth-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="{{ form.username.id_for_label }}">USERNAME</label>
+                    <div class="input-group auth-input">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                        </div>
+                        {{ form.username }}
+                    </div>
+                    {% for error in form.username.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.password.id_for_label }}">PASSWORD</label>
+                    <div class="input-group auth-input">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        </div>
+                        {{ form.password }}
+                        <div class="input-group-append">
+                            <button type="button" class="input-group-text auth-toggle-password" aria-label="Mostrar password">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% for error in form.password.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                {% if form.non_field_errors %}
+                <div class="text-danger small mb-2">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+                <button type="submit" class="btn btn-dark btn-block auth-submit">LOGIN</button>
+                <a href="#" class="auth-forgot">Forgot username or password?</a>
+            </form>
+        </div>
+    </div>
+    <div class="auth-right">
+        <div class="auth-illustration">
+            <svg viewBox="0 0 720 520" aria-hidden="true" focusable="false">
+                <rect x="70" y="90" width="240" height="180" rx="18" fill="#2f3b52" />
+                <rect x="100" y="120" width="180" height="40" rx="8" fill="#f4f6f9" />
+                <rect x="100" y="180" width="140" height="20" rx="6" fill="#97a5be" />
+                <circle cx="520" cy="150" r="90" fill="#3e4c67" />
+                <rect x="430" y="260" width="220" height="150" rx="20" fill="#2a3347" />
+                <rect x="450" y="290" width="90" height="50" rx="10" fill="#f4f6f9" />
+                <rect x="550" y="290" width="70" height="80" rx="10" fill="#9aa9c2" />
+                <circle cx="190" cy="400" r="70" fill="#3a465e" />
+                <rect x="160" y="380" width="60" height="60" rx="12" fill="#f4f6f9" />
+                <circle cx="360" cy="260" r="60" fill="#2d374b" />
+            </svg>
+        </div>
+    </div>
+</div>
+{% endblock %}

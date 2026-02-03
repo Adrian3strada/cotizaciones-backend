@@ -1,0 +1,37 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}Cotizaciones{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+</head>
+<body class="hold-transition auth-body">
+    <div class="auth-page">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+    <script>
+        $(function () {
+            $("input, select, textarea").addClass("form-control");
+            $("input[name='username']").attr("placeholder", "username");
+            $("input[name='password']").attr("placeholder", "password");
+
+            $(".auth-toggle-password").on("click", function () {
+                const $input = $(this).closest(".input-group").find("input");
+                const isPassword = $input.attr("type") === "password";
+                $input.attr("type", isPassword ? "text" : "password");
+                $(this).find("i").toggleClass("fa-eye fa-eye-slash");
+            });
+        });
+    </script>
+</body>
+</html>

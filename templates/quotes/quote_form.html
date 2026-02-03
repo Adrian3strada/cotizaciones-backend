@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Cotización{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <h1 class="m-0">{% if is_edit %}Editar{% else %}Nueva{% endif %} cotización</h1>
+    </div>
+</div>
+
+<div class="card card-primary">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                {{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
+            <div class="row">
+                {% for field in form %}
+                <div class="col-md-6">
+                    {% if field.field.widget.input_type == 'checkbox' %}
+                    <div class="form-check mb-3">
+                        {{ field }}
+                        <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    </div>
+                    {% else %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}
+                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                        {% endif %}
+                        {% for error in field.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Items</h3>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="add-item-row">
+                        + Agregar item
+                    </button>
+                </div>
+                <div class="card-body table-responsive p-0">
+                    {{ formset.management_form }}
+                    {% if formset.non_form_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in formset.non_form_errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <table class="table table-bordered table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Modelo</th>
+                                <th>Cantidad</th>
+                                <th>Precio unitario</th>
+                                <th>Descuento</th>
+                                <th>Notas configuración</th>
+                                <th>Eliminar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="items-formset">
+                            {% for item_form in formset %}
+                            <tr>
+                                <td>{{ item_form.id }}{{ item_form.camera_model }}</td>
+                                <td>{{ item_form.quantity }}</td>
+                                <td>{{ item_form.unit_price }}</td>
+                                <td>{{ item_form.discount_amount }}</td>
+                                <td>{{ item_form.configuration_notes }}</td>
+                                <td>
+                                    {% if item_form.instance.pk %}
+                                    {{ item_form.DELETE }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% if item_form.non_field_errors %}
+                            <tr>
+                                <td colspan="6">{{ item_form.non_field_errors }}</td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">Guardar</button>
+                <a class="btn btn-secondary" href="{% url 'quotes:list' %}">Cancelar</a>
+            </div>
+        </form>
+
+        <template id="empty-form-row">
+            <tr>
+                <td>{{ formset.empty_form.id }}{{ formset.empty_form.camera_model }}</td>
+                <td>{{ formset.empty_form.quantity }}</td>
+                <td>{{ formset.empty_form.unit_price }}</td>
+                <td>{{ formset.empty_form.discount_amount }}</td>
+                <td>{{ formset.empty_form.configuration_notes }}</td>
+                <td></td>
+            </tr>
+        </template>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const customerSelect = document.getElementById("id_customer");
+        const contactSelect = document.getElementById("id_contact");
+        const addButton = document.getElementById("add-item-row");
+        const formsetBody = document.getElementById("items-formset");
+        const emptyRowTemplate = document.getElementById("empty-form-row");
+        const totalForms = document.getElementById("id_{{ formset.prefix }}-TOTAL_FORMS");
+
+        function setContactOptions(contacts, selectedId) {
+            if (!contactSelect) return;
+            contactSelect.innerHTML = "";
+            const emptyOption = document.createElement("option");
+            emptyOption.value = "";
+            emptyOption.textContent = "---------";
+            contactSelect.appendChild(emptyOption);
+            contacts.forEach((contact) => {
+                const option = document.createElement("option");
+                option.value = String(contact.id);
+                option.textContent = contact.full_name;
+                if (selectedId && String(contact.id) === String(selectedId)) {
+                    option.selected = true;
+                }
+                contactSelect.appendChild(option);
+            });
+        }
+
+        async function loadContacts(customerId) {
+            if (!customerId || !contactSelect) {
+                setContactOptions([], null);
+                return;
+            }
+            const baseUrl = "{% url 'customers:contacts' 0 %}".replace("/0/", `/${customerId}/`);
+            const response = await fetch(baseUrl, {
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+                credentials: "same-origin",
+            });
+            if (!response.ok) {
+                setContactOptions([], null);
+                return;
+            }
+            const data = await response.json();
+            const selectedId = contactSelect.value;
+            setContactOptions(data.contacts || [], selectedId);
+        }
+
+        if (customerSelect) {
+            customerSelect.addEventListener("change", () => {
+                loadContacts(customerSelect.value);
+            });
+            if (customerSelect.value) {
+                loadContacts(customerSelect.value);
+            } else {
+                setContactOptions([], null);
+            }
+        }
+
+        if (!addButton || !formsetBody || !emptyRowTemplate || !totalForms) {
+            return;
+        }
+
+        addButton.addEventListener("click", function () {
+            const formIndex = parseInt(totalForms.value, 10);
+            const rowHtml = emptyRowTemplate.innerHTML.replace(/__prefix__/g, formIndex);
+            const tempWrapper = document.createElement("tbody");
+            tempWrapper.innerHTML = rowHtml.trim();
+            const newRow = tempWrapper.firstElementChild;
+            if (newRow) {
+                formsetBody.appendChild(newRow);
+                totalForms.value = formIndex + 1;
+            }
+        });
+    })();
+</script>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Eliminar modelo{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <h1 class="m-0">Eliminar modelo</h1>
+    </div>
+</div>
+
+<div class="card card-danger">
+    <div class="card-body">
+        <p>¿Seguro que deseas eliminar el modelo <strong>{{ object.model_code }}</strong>?</p>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Eliminar</button>
+            <a class="btn btn-secondary" href="{% url 'catalog:detail' object.pk %}">Cancelar</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
