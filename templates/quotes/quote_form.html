@@ -13,6 +13,12 @@
     <div class="card-body">
         <form method="post">
             {% csrf_token %}
+            {% if form.errors or formset.errors %}
+            <div class="alert alert-danger">
+                Revisa los campos marcados en rojo; hay errores en el formulario.
+            </div>
+            {% endif %}
+
             {% if form.non_field_errors %}
             <div class="alert alert-danger">
                 {% for error in form.non_field_errors %}
@@ -20,6 +26,7 @@
                 {% endfor %}
             </div>
             {% endif %}
+
             <div class="row">
                 {% for field in form %}
                 <div class="col-md-6">
@@ -53,6 +60,7 @@
                 </div>
                 <div class="card-body table-responsive p-0">
                     {{ formset.management_form }}
+
                     {% if formset.non_form_errors %}
                     <div class="alert alert-danger">
                         {% for error in formset.non_form_errors %}
@@ -60,6 +68,7 @@
                         {% endfor %}
                     </div>
                     {% endif %}
+
                     <table class="table table-bordered table-striped mb-0">
                         <thead>
                             <tr>
@@ -74,17 +83,43 @@
                         <tbody id="items-formset">
                             {% for item_form in formset %}
                             <tr>
-                                <td>{{ item_form.id }}{{ item_form.camera_model }}</td>
-                                <td>{{ item_form.quantity }}</td>
-                                <td>{{ item_form.unit_price }}</td>
-                                <td>{{ item_form.discount_amount }}</td>
-                                <td>{{ item_form.configuration_notes }}</td>
+                                <td>
+                                    {{ item_form.id }}{{ item_form.camera_model }}
+                                    {% for error in item_form.camera_model.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {{ item_form.quantity }}
+                                    {% for error in item_form.quantity.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {{ item_form.unit_price }}
+                                    {% for error in item_form.unit_price.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {{ item_form.discount_amount }}
+                                    {% for error in item_form.discount_amount.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {{ item_form.configuration_notes }}
+                                    {% for error in item_form.configuration_notes.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </td>
                                 <td>
                                     {% if item_form.instance.pk %}
                                     {{ item_form.DELETE }}
                                     {% endif %}
                                 </td>
                             </tr>
+
                             {% if item_form.non_field_errors %}
                             <tr>
                                 <td colspan="6">{{ item_form.non_field_errors }}</td>
@@ -162,19 +197,12 @@
         }
 
         if (customerSelect) {
-            customerSelect.addEventListener("change", () => {
-                loadContacts(customerSelect.value);
-            });
-            if (customerSelect.value) {
-                loadContacts(customerSelect.value);
-            } else {
-                setContactOptions([], null);
-            }
+            customerSelect.addEventListener("change", () => loadContacts(customerSelect.value));
+            if (customerSelect.value) loadContacts(customerSelect.value);
+            else setContactOptions([], null);
         }
 
-        if (!addButton || !formsetBody || !emptyRowTemplate || !totalForms) {
-            return;
-        }
+        if (!addButton || !formsetBody || !emptyRowTemplate || !totalForms) return;
 
         addButton.addEventListener("click", function () {
             const formIndex = parseInt(totalForms.value, 10);

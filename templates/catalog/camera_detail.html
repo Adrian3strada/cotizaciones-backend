@@ -11,11 +11,19 @@
             </div>
             <div class="col-sm-6 text-right">
                 {% if perms.catalog.change_cameramodel %}
-                    <a class="btn btn-outline-primary" href="{% url 'catalog:update' object.pk %}">Editar</a>
+                <a class="btn btn-outline-primary" href="{% url 'catalog:update' object.pk %}">Editar</a>
                 {% endif %}
                 {% if perms.catalog.delete_cameramodel %}
-                    <a class="btn btn-outline-danger" href="{% url 'catalog:delete' object.pk %}">Eliminar</a>
+                <a class="btn btn-outline-danger" href="{% url 'catalog:delete' object.pk %}">Eliminar</a>
                 {% endif %}
+            </div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-sm-6 text-center">
+                {% if perms.catalog.add_cameramodel %}
+                <a class="btn btn-primary" href="{% url 'catalog:create' %}">Agregar otra cámara</a>
+                {% endif %}
+                <a class="btn btn-secondary ml-2" href="{% url 'catalog:list' %}">Volver a cámaras</a>
             </div>
         </div>
     </div>
@@ -34,9 +42,9 @@
                 <p>
                     <strong>Ficha técnica:</strong>
                     {% if object.datasheet_file %}
-                        <a href="{{ object.datasheet_file.url }}">Descargar</a>
+                    <a href="{{ object.datasheet_file.url }}">Descargar</a>
                     {% else %}
-                        -
+                    -
                     {% endif %}
                 </p>
             </div>

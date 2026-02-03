@@ -7,13 +7,15 @@
     <style>
         @page {
             size: A4;
-            margin: 18mm 16mm;
+            margin: 0.75in 0.6in;
         }
 
         body {
             font-family: Arial, sans-serif;
-            font-size: 10.5px;
-            color: #111;
+            font-size: 9.5px;
+            color: #000;
+            margin: 0;
+            padding: 0;
         }
 
         table {
@@ -24,12 +26,12 @@
         th,
         td {
             border: 1px solid #000;
-            padding: 4px 5px;
+            padding: 3px 4px;
             vertical-align: top;
         }
 
-        .no-border td {
-            border: 0;
+        .no-border {
+            border: none;
         }
 
         .right {
@@ -41,292 +43,333 @@
         }
 
         .small {
-            font-size: 9.5px;
+            font-size: 8.5px;
         }
 
-        .muted {
-            color: #4b5563;
+        .header-table {
+            margin-bottom: 8px;
+        }
+
+        .header-table td {
+            border: 0;
+            padding: 0;
+        }
+
+        .logo {
+            height: 60px;
+            width: auto;
+        }
+
+        .company-name {
+            font-weight: bold;
+            font-size: 10.5px;
+        }
+
+        .company-info {
+            font-size: 8px;
+            line-height: 1.2;
+        }
+
+        .company-info div {
+            margin: 1px 0;
+        }
+
+        .header-right-image {
+            max-width: 100%;
+            height: 60px;
+            display: block;
+        }
+
+        .title-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            gap: 15px;
+        }
+
+        .title-box {
+            flex: 1;
+            border: 2px solid #000;
+            padding: 6px 8px;
+            font-size: 9px;
+        }
+
+        .title-box-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 2px 0;
+        }
+
+        .title-box-label {
+            font-weight: bold;
+            width: 65px;
+        }
+
+        .client-section {
+            display: flex;
+            gap: 10px;
+            margin: 8px 0;
+        }
+
+        .client-box {
+            flex: 1;
+            border: 1px solid #000;
+            padding: 8px;
+            font-size: 9px;
+        }
+
+        .client-box-title {
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 9px;
+            margin-bottom: 4px;
+        }
+
+        .client-line {
+            display: flex;
+            margin: 2px 0;
+            font-size: 9px;
+        }
+
+        .client-label {
+            font-weight: bold;
+            width: 65px;
+            flex-shrink: 0;
+        }
+
+        .client-value {
+            flex: 1;
+            word-break: break-word;
+        }
+
+        .client-label-short {
+            font-weight: bold;
+            width: 55px;
+            flex-shrink: 0;
+        }
+
+        .client-value-short {
+            width: 90px;
+            word-break: break-word;
+        }
+
+        .quote-box {
+            min-width: 150px;
+            border: 1px solid #000;
+            padding: 20px 8px;
+            text-align: center;
+        }
+
+        .quote-title {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .quote-customer {
+            font-weight: bold;
+            font-size: 10px;
         }
 
         .items-header th {
             background: #1d7c8f;
             color: #fff;
             font-weight: bold;
+            padding: 4px 3px;
+            font-size: 8.5px;
+            text-align: left;
         }
 
-        .header-table td {
-            border: 0;
-            padding: 0 4px;
-        }
-
-        .logo {
-            height: 70px;
-        }
-
-        .header-right-cell {
-            vertical-align: top;
-            padding-top: 4px;
-        }
-
-        .header-right-image {
-            max-width: 85%;
-            height: auto;
-            display: block;
-            margin-left: auto;
-        }
-
-        .company-name {
-            font-weight: bold;
-            font-size: 11px;
-        }
-
-        .company-block {
-            line-height: 1.25;
-        }
-
-        .title-box {
-            border: 2px solid #000;
-            padding: 6px 8px;
-            font-weight: bold;
-            font-size: 9.5px;
-        }
-
-        .title-box table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .title-box td {
-            border: 0;
-            padding: 0;
-        }
-
-        .title-box .label {
-            width: 70px;
-        }
-
-        .client-title {
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .quote-title {
-            font-weight: bold;
-            font-size: 16px;
-            letter-spacing: 0.5px;
-        }
-
-        .quote-customer {
-            font-weight: bold;
-            font-size: 12px;
-        }
-
-        .quote-box {
+        .items-header th.center {
             text-align: center;
-            vertical-align: middle;
-            padding: 10px 6px;
-            border: 1px solid #000;
         }
 
-        .client-section {
+        .items-body td {
+            font-size: 9px;
+            padding: 3px 4px;
+        }
+
+        .items-body .center {
+            text-align: center;
+        }
+
+        .items-body .right {
+            text-align: right;
+        }
+
+        .summary-table {
             margin-top: 8px;
-            display: flex;
-            justify-content: flex-end;
-            align-items: flex-start;
-            gap: 10px;
-            width: 100%;
-        }
-
-        .client-info-box {
-            width: 52%;
-            border: 1px solid #000;
-            padding: 8px 10px;
-            box-sizing: border-box;
-            font-size: 10.5px;
-        }
-
-        .client-info-title {
-            font-weight: bold;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-        }
-
-        .client-line {
-            margin: 2px 0;
-            display: grid;
-            grid-template-columns: 70px 1fr 60px 90px;
-            column-gap: 6px;
-        }
-
-        .client-line .label {
-            font-weight: bold;
-        }
-
-        .client-line .value {
-            min-width: 0;
-            word-break: break-word;
-        }
-
-        .client-line .label-short {
-            font-weight: bold;
-        }
-
-        .client-line .value-short {
-            min-width: 0;
-            word-break: break-word;
-        }
-
-        .client-line .value-wide {
-            grid-column: 2 / span 3;
-        }
-
-        .quote-box-right {
-            width: 24%;
-            margin-top: 0;
-            box-sizing: border-box;
-        }
-
-
-        .thin-row td {
-            padding: 3px 5px;
-        }
-
-        .footer-terms {
-            position: fixed;
-            left: 16mm;
-            right: 16mm;
-            bottom: 16mm;
-            box-sizing: border-box;
             width: auto;
-            display: block;
+            float: right;
+            margin-right: 2%;
         }
 
-        .footer-terms table {
-            margin: 0;
-            width: 100%;
-            min-width: 100%;
-            table-layout: fixed;
+        .summary-table td {
+            border: 0;
+            padding: 3px 10px 3px 0;
+        }
+
+        .summary-table .label {
+            font-weight: bold;
+            text-align: right;
+            width: 120px;
+        }
+
+        .summary-table .value {
+            text-align: right;
+            width: 100px;
+        }
+
+        .clear {
+            clear: both;
+        }
+
+        .footer-table {
+            margin-top: 120px;
+            font-size: 8.5px;
+        }
+
+        .footer-table td {
+            border: 0;
+            padding: 3px 4px;
+            font-size: 8.5px;
+        }
+
+        .footer-label {
+            font-weight: bold;
+            width: 140px;
+        }
+
+        .footer-value {
+            flex: 1;
+        }
+
+        .footer-row {
+            display: flex;
+            margin: 4px 0;
+        }
+
+        .section-title {
+            font-weight: bold;
+            margin-top: 10px;
+            margin-bottom: 4px;
+            font-size: 9px;
         }
     </style>
 </head>
 
 <body>
+    <!-- Header -->
     <table class="header-table">
         <tr>
-            <td style="width: 22%;">
+            <td style="width: 20%;">
                 {% if company_logo_uri %}
                 <img src="{{ company_logo_uri }}" alt="Logo" class="logo">
                 {% else %}
                 <img src="{% static 'img/logo.png' %}" alt="Logo" class="logo">
                 {% endif %}
             </td>
-            <td style="width: 48%;">
-                <div class="company-block">
-                    <div class="company-name">Sistemas de Conteo de Personas.</div>
-                    <div class="small">{{ company_street }}</div>
-                    <div class="small">{{ company_colony }}, {{ company_postal_code }}</div>
-                    <div class="small">Tel: {{ company_phone }}</div>
-                    <div class="small">RFC: {{ company_rfc }}</div>
-                    <div class="small">e.mail: {{ company_email }}</div>
-                    <div class="small">{{ company_website }}</div>
+            <td style="width: 50%;">
+                <div class="company-name">Sistemas de Conteo de Personas.</div>
+                <div class="company-info">
+                    <div>{{ company_street }}</div>
+                    <div>{{ company_colony }}, {{ company_postal_code }}</div>
+                    <div>Tel: {{ company_phone }}</div>
+                    <div>RFC: {{ company_rfc }}</div>
+                    <div>e.mail: {{ company_email }}</div>
+                    <div>{{ company_website }}</div>
                 </div>
             </td>
-            <td style="width: 30%;" class="right header-right-cell">
+            <td style="width: 30%; text-align: right; padding-top: 0;">
                 {% if header_right_uri %}
                 <img src="{{ header_right_uri }}" alt="Imagen cabecera" class="header-right-image">
-                {% else %}
-                <img src="{% static 'img/quote_header_rigth.png' %}" alt="Imagen cabecera" class="header-right-image">
                 {% endif %}
             </td>
         </tr>
     </table>
 
-    <table style="margin-top: 4px;">
-        <tr>
-            <td style="width: 28%; border: 0;">
-                <div class="title-box">
-                    <table>
-                        <tr>
-                            <td class="label">Número:</td>
-                            <td>SCP-{{ quote.quote_number|cut:"SCP-"|cut:"COT-" }}</td>
-                        </tr>
-                        <tr>
-                            <td class="label">Fecha:</td>
-                            <td>{{ quote.issue_date|date:"d F Y" }}</td>
-                        </tr>
-                        <tr>
-                            <td class="label">Vigencia:</td>
-                            <td>{{ quote.valid_until|date:"d F Y" }}</td>
-                        </tr>
-                    </table>
-                </div>
-            </td>
-            <td style="width: 42%; border: 0;"></td>
-            <td style="width: 30%; border: 0;"></td>
-        </tr>
-    </table>
-
-    <div class="client-section">
-        <div class="client-info-box">
-            <div class="client-info-title">CLIENTE</div>
-            <div class="client-line">
-                <span class="label">Empresa:</span>
-                <span class="value value-wide">{{ quote.customer.name }}</span>
+    <!-- Title Section -->
+    <div class="title-info">
+        <div class="title-box">
+            <div class="title-box-row">
+                <span class="title-box-label">Número:</span>
+                <span>{{ quote.quote_number }}</span>
             </div>
-            <div class="client-line">
-                <span class="label">Web:</span>
-                <span class="value value-wide">{{ quote.customer.website|default:"-" }}</span>
+            <div class="title-box-row">
+                <span class="title-box-label">Fecha:</span>
+                <span>{{ quote.issue_date|date:"d \d\e F \d\e Y" }}</span>
             </div>
-            <div class="client-line">
-                <span class="label">Calle y No.</span>
-                <span class="value value-wide">{{ quote.customer.street_address|default:"-" }}</span>
-            </div>
-            <div class="client-line">
-                <span class="label">Col.</span>
-                <span class="value">{{ quote.customer.neighborhood|default:"-" }}</span>
-                <span class="label-short">C.P.</span>
-                <span class="value-short">{{ quote.customer.postal_code|default:"-" }}</span>
-            </div>
-            <div class="client-line">
-                <span class="label">Tels.</span>
-                <span class="value">{{ quote.customer.phone|default:"-" }}</span>
-                <span class="label-short">Celular:</span>
-                <span class="value-short">{{ quote.customer.mobile|default:"-" }}</span>
-            </div>
-            <div class="client-line">
-                <span class="label">Contacto:</span>
-                <span class="value value-wide">{{ quote.contact.full_name|default:"-" }}</span>
-            </div>
-            <div class="client-line">
-                <span class="label">Puesto:</span>
-                <span class="value">{{ quote.contact.position|default:"-" }}</span>
-                <span class="label-short">Moneda</span>
-                <span class="value-short">{{ quote.currency }}</span>
-            </div>
-            <div class="client-line">
-                <span class="label">e-mail:</span>
-                <span class="value value-wide">{{ quote.contact.email|default:"-" }}</span>
+            <div class="title-box-row">
+                <span class="title-box-label">Vigencia:</span>
+                <span>{{ quote.valid_until|date:"d \d\e F" }}</span>
             </div>
         </div>
-        <div class="quote-box quote-box-right">
+        <div style="flex: 2;"></div>
+        <div class="quote-box">
             <div class="quote-title">COTIZACIÓN</div>
             <div class="quote-customer">{{ quote.customer.name }}</div>
         </div>
     </div>
 
-    <table style="margin-top: 22px;">
+    <!-- Client Section -->
+    <div class="client-section">
+        <div class="client-box">
+            <div class="client-box-title">CLIENTE</div>
+            <div class="client-line">
+                <span class="client-label">Empresa:</span>
+                <span class="client-value">{{ quote.customer.name }}</span>
+            </div>
+            <div class="client-line">
+                <span class="client-label">Web:</span>
+                <span class="client-value">{{ quote.customer.website|default:"" }}</span>
+            </div>
+            <div class="client-line">
+                <span class="client-label">Calle y No.</span>
+                <span class="client-value">{{ quote.customer.street_address|default:"" }}</span>
+            </div>
+            <div class="client-line">
+                <span class="client-label">Col.</span>
+                <span class="client-value" style="width: 100px;">{{ quote.customer.neighborhood|default:"" }}</span>
+                <span class="client-label-short">C.P.</span>
+                <span class="client-value-short">{{ quote.customer.postal_code|default:"" }}</span>
+            </div>
+            <div class="client-line">
+                <span class="client-label">Tels.</span>
+                <span class="client-value" style="width: 100px;">{{ quote.customer.phone|default:"" }}</span>
+                <span class="client-label-short">Celular:</span>
+                <span class="client-value-short">{{ quote.customer.mobile|default:"" }}</span>
+            </div>
+            <div class="client-line">
+                <span class="client-label">Contacto:</span>
+                <span class="client-value">{{ quote.contact.full_name|default:"" }}</span>
+            </div>
+            <div class="client-line">
+                <span class="client-label">Puesto:</span>
+                <span class="client-value" style="width: 100px;">{{ quote.contact.position|default:"" }}</span>
+                <span class="client-label-short">Moneda</span>
+                <span class="client-value-short">{{ quote.currency }}</span>
+            </div>
+            <div class="client-line">
+                <span class="client-label">e-mail:</span>
+                <span class="client-value">{{ quote.contact.email|default:"" }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items Table -->
+    <table style="margin-top: 12px;">
         <thead class="items-header">
             <tr>
-                <th class="center">Partida</th>
-                <th>No de parte</th>
-                <th>Descripción</th>
-                <th class="center">Unidad</th>
-                <th class="center">Cantidad</th>
-                <th class="right">Precio Unitario</th>
-                <th class="right">Total</th>
+                <th class="center" style="width: 8%;">Partida</th>
+                <th style="width: 12%;">No de parte</th>
+                <th style="width: 40%;">Descripción</th>
+                <th class="center" style="width: 10%;">Unidad</th>
+                <th class="center" style="width: 10%;">Cantidad</th>
+                <th class="right" style="width: 12%;">Precio Unitario</th>
+                <th class="right" style="width: 12%;">Total</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody class="items-body">
             {% for item in quote.items.all %}
             <tr>
                 <td class="center">{{ forloop.counter }}</td>
@@ -334,10 +377,10 @@
                 <td>
                     {{ item.camera_model.name|default:item.camera_model.model_code }}
                     {% if item.configuration_notes %}
-                    <div class="small muted">{{ item.configuration_notes }}</div>
+                    <br><span class="small">{{ item.configuration_notes }}</span>
                     {% endif %}
                     {% if item.discount_amount and item.discount_amount > 0 %}
-                    <div class="small muted">Desc.: -${{ item.discount_amount|floatformat:2 }}</div>
+                    <br><span class="small">Desc.: -${{ item.discount_amount|floatformat:2 }}</span>
                     {% endif %}
                 </td>
                 <td class="center">Pza.</td>
@@ -349,54 +392,54 @@
         </tbody>
     </table>
 
-    <table style="margin-top: 10px;">
+    <!-- Summary Table -->
+    <table class="summary-table">
         <tr>
-            <td style="width: 70%; border: 0;"></td>
-            <td class="right"><strong>Total</strong></td>
-            <td class="right">${{ quote.subtotal|floatformat:2 }} {{ quote.currency }}</td>
+            <td class="label">Total</td>
+            <td class="value">${{ quote.subtotal|floatformat:2 }} {{ quote.currency }}</td>
         </tr>
         <tr>
-            <td style="border: 0;"></td>
-            <td class="right"><strong>IVA ({{ quote.tax_rate }}%)</strong></td>
-            <td class="right">${{ quote.tax_amount|floatformat:2 }}</td>
+            <td class="label">IVA</td>
+            <td class="value">${{ quote.tax_amount|floatformat:2 }}</td>
         </tr>
         <tr>
-            <td style="border: 0;"></td>
-            <td class="right"><strong>Precio más IVA</strong></td>
-            <td class="right">${{ quote.total|floatformat:2 }}</td>
+            <td class="label"><strong>Preción más IVA</strong></td>
+            <td class="value"><strong>${{ quote.total|floatformat:2 }}</strong></td>
         </tr>
     </table>
 
-    <div class="footer-terms">
-        <table>
-            <tr class="thin-row">
-                <td><strong>Realizada por:</strong></td>
-                <td>{{ quote.sales_user.get_full_name|default:quote.sales_user.username }}</td>
-                <td><strong>Autorizado:</strong></td>
-                <td>____________________</td>
-            </tr>
-            <tr class="thin-row">
-                <td><strong>Precios en:</strong></td>
-                <td>Moneda nacional / USD</td>
-                <td><strong>Forma de Pago:</strong></td>
-                <td>{{ quote.terms|default:"Anticipo 100%" }}</td>
-            </tr>
-            <tr class="thin-row">
-                <td><strong>Tiempo de Entrega:</strong></td>
-                <td>5 días posterior al pago inicial y primera renta</td>
-                <td><strong>Garantía:</strong></td>
-                <td>12 meses</td>
-            </tr>
-            <tr class="thin-row">
-                <td><strong>Lugar de entrega:</strong></td>
-                <td colspan="3">{{ quote.customer.shipping_address|default:"Tienda" }}</td>
-            </tr>
-            <tr>
-                <td><strong>Observaciones</strong></td>
-                <td colspan="3">{{ quote.notes|default:"-" }}</td>
-            </tr>
-        </table>
-    </div>
+    <div class="clear"></div>
+
+    <!-- Footer -->
+    <table class="footer-table">
+        <tr>
+            <td class="footer-label">Realizada por:</td>
+            <td class="footer-value">{{ quote.sales_user.get_full_name|default:quote.sales_user.username }}</td>
+            <td class="footer-label">Autorizado:</td>
+            <td class="footer-value">____________________</td>
+        </tr>
+        <tr>
+            <td class="footer-label">Precios en:</td>
+            <td class="footer-value">Moneda nacional / USD</td>
+            <td class="footer-label">Forma de Pago:</td>
+            <td class="footer-value">{{ quote.terms|default:"Anticipo 100%" }}</td>
+        </tr>
+        <tr>
+            <td class="footer-label">Tiempo de Entrega:</td>
+            <td class="footer-value">5 días posterior al pago inicial y primera renta</td>
+            <td class="footer-label">Garantía:</td>
+            <td class="footer-value">12 meses</td>
+        </tr>
+        <tr>
+            <td class="footer-label">Lugar de entrega:</td>
+            <td class="footer-value" colspan="3">{{ quote.customer.shipping_address|default:"Tienda" }}</td>
+        </tr>
+        <tr>
+            <td class="footer-label">Observaciones</td>
+            <td class="footer-value" colspan="3">{{ quote.notes|default:"-" }}</td>
+        </tr>
+    </table>
+
 </body>
 
 </html>
