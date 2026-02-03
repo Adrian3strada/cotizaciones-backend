@@ -1,4 +1,22 @@
-Django>=5.1,<6.0
-weasyprint>=62.0
-psycopg[binary]>=3.2
-gunicorn
+asgiref==3.11.0
+brotli==1.2.0
+cffi @ file:///D:/bld/cffi_1761202855497/work
+cssselect2 @ file:///home/conda/feedstock_root/build_artifacts/cssselect2_1751498372358/work
+Django==6.0.1
+fonttools @ file:///D:/bld/fonttools_1765632578939/work
+munkres==1.1.4
+packaging @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_packaging_1769093650/work
+pillow @ file:///D:/bld/bld/rattler-build_pillow_1767353195/work
+pycparser @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_pycparser_1733195786/work
+pydyf @ file:///home/conda/feedstock_root/build_artifacts/pydyf_1734953323721/work
+pyphen @ file:///home/conda/feedstock_root/build_artifacts/pyphen_1737393240569/work
+setuptools==80.10.1
+sqlparse==0.5.5
+tinycss2 @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_tinycss2_1764621508/work
+tinyhtml5 @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_tinyhtml5_1751285354/work
+tzdata==2025.3
+unicodedata2 @ file:///D:/bld/unicodedata2_1763054622287/work
+weasyprint @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_weasyprint_1764712210/work
+webencodings @ file:///home/conda/feedstock_root/build_artifacts/webencodings_1733236011802/work
+wheel==0.46.2
+zopfli==0.4.0
