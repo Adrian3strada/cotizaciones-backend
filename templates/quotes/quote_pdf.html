@@ -105,6 +105,11 @@
             width: 65px;
         }
 
+        .title-box-value {
+            flex: 1;
+            text-align: right;
+        }
+
         .client-section {
             display: flex;
             gap: 10px;
@@ -116,6 +121,7 @@
             border: 1px solid #000;
             padding: 8px;
             font-size: 9px;
+            margin-left: 130px;
         }
 
         .client-box-title {
@@ -225,8 +231,12 @@
         }
 
         .footer-table {
-            margin-top: 120px;
+            position: fixed;
+            left: 16mm;
+            right: 16mm;
+            bottom: 18mm;
             font-size: 8.5px;
+            margin-top: 120px;
         }
 
         .footer-table td {
@@ -293,15 +303,15 @@
         <div class="title-box">
             <div class="title-box-row">
                 <span class="title-box-label">Número:</span>
-                <span>{{ quote.quote_number }}</span>
+                <span class="title-box-value">{{ quote.quote_number }}</span>
             </div>
             <div class="title-box-row">
                 <span class="title-box-label">Fecha:</span>
-                <span>{{ quote.issue_date|date:"d \d\e F \d\e Y" }}</span>
+                <span class="title-box-value">{{ quote.issue_date|date:"d \d\e F \d\e Y" }}</span>
             </div>
             <div class="title-box-row">
                 <span class="title-box-label">Vigencia:</span>
-                <span>{{ quote.valid_until|date:"d \d\e F" }}</span>
+                <span class="title-box-value">{{ quote.valid_until|date:"d \d\e F" }}</span>
             </div>
         </div>
         <div style="flex: 2;"></div>
