@@ -37,6 +37,7 @@ else:
         "127.0.0.1",
         "f82067d55692.ngrok-free.app",
         "8e4f3cd87ccf.ngrok-free.app",
+        "f20c041eefef.ngrok-free.app",
     ]
 
 _csrf_trusted_origins_env = os.environ.get("CSRF_TRUSTED_ORIGINS")
@@ -49,7 +50,7 @@ if _csrf_trusted_origins_env:
 else:
     CSRF_TRUSTED_ORIGINS = [
         "https://f82067d55692.ngrok-free.app",
-        "https://8e4f3cd87ccf.ngrok-free.app",
+        "https://f20c041eefef.ngrok-free.app",
     ]
 
 

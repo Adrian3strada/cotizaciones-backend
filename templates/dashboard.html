@@ -3,63 +3,244 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1 class="m-0">Dashboard</h1>
-            </div>
+<div class="dashboard-page">
+    <div class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Panel de control</span>
+            <h1 class="dashboard-heading">Dashboard de cotizaciones</h1>
+            <p class="dashboard-subtitle">Visualiza clientes, catálogo y cotizaciones en un solo lugar.</p>
         </div>
+        {% if perms.quotes.add_quote or perms.customers.add_customer %}
+        <div class="dashboard-cta">
+            {% if perms.quotes.add_quote %}
+            <a class="btn btn-primary" href="{% url 'quotes:create' %}">
+                Nueva cotización
+            </a>
+            {% endif %}
+            {% if perms.customers.add_customer %}
+            <a class="btn btn-outline-light" href="{% url 'customers:create' %}">
+                Nuevo cliente
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
-</div>
 
-<div class="row">
-    <div class="col-lg-4 col-12">
-        <div class="small-box bg-info">
-            <div class="inner">
-                <h3>Clientes</h3>
-                <p>Gestiona clientes y contactos</p>
+    <div class="dashboard-stat-grid">
+        <a class="dashboard-stat" href="{% url 'customers:list' %}">
+            <div>
+                <p class="dashboard-stat-title">Clientes</p>
+                <span class="dashboard-stat-value">{{ customer_count }}</span>
+                <span class="dashboard-stat-detail">Contactos y cuentas activas</span>
             </div>
-            <div class="icon">
-                <i class="fas fa-users"></i>
+            <span class="dashboard-stat-icon"><i class="fas fa-users"></i></span>
+        </a>
+        <a class="dashboard-stat" href="{% url 'catalog:list' %}">
+            <div>
+                <p class="dashboard-stat-title">Catálogo</p>
+                <span class="dashboard-stat-value">{{ model_count }}</span>
+                <span class="dashboard-stat-detail">Modelos disponibles</span>
             </div>
-            <a href="{% url 'customers:list' %}" class="small-box-footer">Ver clientes <i class="fas fa-arrow-circle-right"></i></a>
-        </div>
+            <span class="dashboard-stat-icon"><i class="fas fa-camera"></i></span>
+        </a>
+        <a class="dashboard-stat" href="{% url 'quotes:list' %}">
+            <div>
+                <p class="dashboard-stat-title">Cotizaciones</p>
+                <span class="dashboard-stat-value">{{ quote_count }}</span>
+                <span class="dashboard-stat-detail">Totales en el sistema</span>
+            </div>
+            <span class="dashboard-stat-icon"><i class="fas fa-file-invoice-dollar"></i></span>
+        </a>
     </div>
-    <div class="col-lg-4 col-12">
-        <div class="small-box bg-success">
-            <div class="inner">
-                <h3>Catálogo</h3>
-                <p>Modelos de cámaras</p>
-            </div>
-            <div class="icon">
-                <i class="fas fa-camera"></i>
-            </div>
-            <a href="{% url 'catalog:list' %}" class="small-box-footer">Ver catálogo <i class="fas fa-arrow-circle-right"></i></a>
-        </div>
-    </div>
-    <div class="col-lg-4 col-12">
-        <div class="small-box bg-warning">
-            <div class="inner">
-                <h3>Cotizaciones</h3>
-                <p>Crear y administrar</p>
-            </div>
-            <div class="icon">
-                <i class="fas fa-file-invoice-dollar"></i>
-            </div>
-            <a href="{% url 'quotes:list' %}" class="small-box-footer">Ver cotizaciones <i class="fas fa-arrow-circle-right"></i></a>
-        </div>
-    </div>
-</div>
 
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Accesos rápidos</h3>
-    </div>
-    <div class="card-body">
-        <a class="btn btn-primary" href="{% url 'customers:create' %}">Nuevo cliente</a>
-        <a class="btn btn-secondary" href="{% url 'catalog:create' %}">Nuevo modelo</a>
-        <a class="btn btn-success" href="{% url 'quotes:create' %}">Nueva cotización</a>
+    <div class="dashboard-grid">
+        <div class="dashboard-card dashboard-visual">
+            <div class="dashboard-card-header">
+                <div>
+                    <h3>Resumen general</h3>
+                    <span>Indicadores principales de operación</span>
+                </div>
+                <span class="dashboard-pill">Actualizado {{ today_label }}</span>
+            </div>
+            <div class="dashboard-visual-body">
+                <div class="visual-grid">
+                    <div class="visual-panel visual-panel--left-top">
+                        <div class="visual-panel-header">Clientes activos</div>
+                        <div class="visual-metric">
+                            <span>Clientes con cotización</span>
+                            <strong>{{ customer_count }}</strong>
+                        </div>
+                        <div class="visual-donut" data-label="{{ active_customer_rate }}% activos"></div>
+                    </div>
+
+                    <div class="visual-panel visual-panel--left-mid">
+                        <div class="visual-panel-header">Modelos más vendidos</div>
+                        <div class="visual-metric">
+                            <span>Top por cantidad</span>
+                            <strong>{{ top_models|length }}</strong>
+                        </div>
+                        <div class="chart-bars">
+                            {% for model in top_models %}
+                            <span style="height: {{ model.pct }}%" title="{{ model.camera_model__model_code }}"></span>
+                            {% empty %}
+                            <span style="height: 10%"></span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="visual-panel visual-panel--left-bottom">
+                        <div class="visual-panel-header">Estado de cotizaciones</div>
+                        <div class="chart-line"></div>
+                        <div class="chart-legend">
+                            <span><i></i> Enviadas {{ sent_count }}</span>
+                            <span><i class="secondary"></i> Aceptadas {{ accepted_count }}</span>
+                        </div>
+                    </div>
+
+                    <div class="visual-center">
+                        <div class="visual-center-title">Resumen comercial</div>
+                        <div class="visual-globe"></div>
+                        <div class="visual-center-stats">
+                            <div>
+                                <span>Total cotizado</span>
+                                <strong>{{ total_amount|floatformat:2 }}</strong>
+                                <em>MXN</em>
+                            </div>
+                            <div>
+                                <span>Cotizaciones</span>
+                                <strong>{{ quote_count }}</strong>
+                                <em>{{ conversion_rate }}% conversión</em>
+                            </div>
+                            <div>
+                                <span>Aceptadas</span>
+                                <strong>{{ accepted_count }}</strong>
+                                <em>MXN {{ accepted_total|floatformat:2 }}</em>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="visual-panel visual-panel--right-top">
+                        <div class="visual-panel-header">Cliente destacado</div>
+                        <div class="visual-metric">
+                            <span>{{ top_customer.customer__name|default:"Sin datos" }}</span>
+                            <strong>{{ top_customer.total|default_if_none:"0.00"|floatformat:2 }}</strong>
+                        </div>
+                        <div class="visual-metric-row">
+                            <div>
+                                <span>Enviadas</span>
+                                <strong>{{ sent_count }}</strong>
+                            </div>
+                            <div>
+                                <span>Rechazadas</span>
+                                <strong>{{ rejected_count }}</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="visual-panel visual-panel--right-mid">
+                        <div class="visual-panel-header">Vendedores</div>
+                        <div class="visual-metric">
+                            <span>Top vendedor</span>
+                            <strong>{{ top_seller.sales_user__username|default:"Sin datos" }}</strong>
+                        </div>
+                        <div class="radar-chart">
+                            <span>Enviadas {{ sent_count }}</span>
+                            <span>Aceptadas {{ accepted_count }}</span>
+                            <span>Borrador {{ draft_count }}</span>
+                            <span>Expiradas {{ expired_count }}</span>
+                        </div>
+                    </div>
+
+                    <div class="visual-panel visual-panel--right-bottom">
+                        <div class="visual-panel-header">Últimos 6 meses</div>
+                        <div class="chart-bars chart-bars--mini">
+                            {% for month in last_months %}
+                            <span style="height: {{ month.pct }}%" title="{{ month.label }}"></span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="visual-panel visual-panel--bottom-wide">
+                        <div class="visual-panel-header">Indicadores clave</div>
+                        <div class="visual-indicators">
+                            <div>
+                                <span>Total cotizaciones</span>
+                                <strong>{{ quote_count }}</strong>
+                                <em>{{ conversion_rate }}% conversión</em>
+                            </div>
+                            <div>
+                                <span>Aceptadas</span>
+                                <strong>{{ accepted_count }}</strong>
+                                <em>{{ accepted_total|floatformat:2 }} MXN</em>
+                            </div>
+                            <div>
+                                <span>Expiradas</span>
+                                <strong>{{ expired_count }}</strong>
+                                <em>Requieren seguimiento</em>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="visual-panel visual-panel--bottom-right">
+                        <div class="visual-panel-header">Ventas aceptadas</div>
+                        <div class="visual-total">
+                            <strong>{{ accepted_total|floatformat:2 }}</strong>
+                            <span>MXN</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-side">
+            <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <div>
+                        <h3>Accesos rápidos</h3>
+                        <span>Acciones más usadas</span>
+                    </div>
+                </div>
+                <div class="dashboard-actions-list">
+                    {% if perms.customers.add_customer %}
+                    <a class="dashboard-link" href="{% url 'customers:create' %}">
+                        <i class="fas fa-user-plus"></i>
+                        Nuevo cliente
+                    </a>
+                    {% endif %}
+                    {% if perms.catalog.add_cameramodel %}
+                    <a class="dashboard-link" href="{% url 'catalog:create' %}">
+                        <i class="fas fa-plus-circle"></i>
+                        Nuevo modelo
+                    </a>
+                    {% endif %}
+                    {% if perms.quotes.add_quote %}
+                    <a class="dashboard-link" href="{% url 'quotes:create' %}">
+                        <i class="fas fa-file-signature"></i>
+                        Nueva cotización
+                    </a>
+                    {% endif %}
+                    {% if perms.quotes.view_quote %}
+                    <a class="dashboard-link" href="{% url 'quotes:report' %}">
+                        <i class="fas fa-chart-line"></i>
+                        Reportes de ventas
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="dashboard-card dashboard-mini">
+                <div>
+                    <p class="dashboard-mini-title">Operación</p>
+                    <h4>Seguimiento en tiempo real</h4>
+                    <span>Revisa estados y fechas clave</span>
+                </div>
+                <div class="dashboard-mini-tags">
+                    <span>Pipeline</span>
+                    <span>Vencimientos</span>
+                    <span>Prioridad</span>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -17,11 +17,138 @@ from django.views.generic import DetailView, ListView, TemplateView
 from pathlib import Path
 
 from quotes.forms import QuoteForm, QuoteItemFormSet
+from catalog.models import CameraModel
 from customers.models import Customer
 from quotes.models import Quote, QuoteItem
 
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = "dashboard.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        queryset = Quote.objects.all()
+        if not self.request.user.is_superuser:
+            queryset = queryset.filter(sales_user=self.request.user)
+
+        accepted_queryset = queryset.filter(status=Quote.STATUS_ACCEPTED)
+        customer_queryset = Customer.objects.filter(quotes__in=queryset).distinct()
+
+        totals = queryset.aggregate(
+            total_amount=Coalesce(
+                Sum("total"),
+                Value(0),
+                output_field=DecimalField(max_digits=14, decimal_places=2),
+            ),
+            accepted_count=Count("id", filter=models.Q(status=Quote.STATUS_ACCEPTED)),
+            sent_count=Count("id", filter=models.Q(status=Quote.STATUS_SENT)),
+            draft_count=Count("id", filter=models.Q(status=Quote.STATUS_DRAFT)),
+            rejected_count=Count("id", filter=models.Q(status=Quote.STATUS_REJECTED)),
+            expired_count=Count("id", filter=models.Q(status=Quote.STATUS_EXPIRED)),
+            total_quotes=Count("id"),
+        )
+        accepted_total = accepted_queryset.aggregate(
+            total=Coalesce(
+                Sum("total"),
+                Value(0),
+                output_field=DecimalField(max_digits=14, decimal_places=2),
+            ),
+        )["total"]
+
+        conversion_rate = 0
+        if totals["total_quotes"]:
+            conversion_rate = round((totals["accepted_count"] / totals["total_quotes"]) * 100, 2)
+
+        top_customer = (
+            accepted_queryset.values("customer__name")
+            .annotate(total=Sum("total"))
+            .order_by("-total")
+            .first()
+        )
+        top_seller = (
+            accepted_queryset.values("sales_user__username")
+            .annotate(total=Sum("total"))
+            .order_by("-total")
+            .first()
+        )
+        top_models = list(
+            QuoteItem.objects.filter(quote__in=accepted_queryset)
+            .values("camera_model__model_code", "camera_model__name")
+            .annotate(total_qty=Coalesce(Sum("quantity"), Value(0)))
+            .order_by("-total_qty")[:6]
+        )
+        max_model_qty = max((model["total_qty"] for model in top_models), default=0) or 1
+        for model in top_models:
+            model["pct"] = round((float(model["total_qty"]) / float(max_model_qty)) * 100)
+
+        current_date = timezone.localdate()
+        month_labels = [
+            "Enero",
+            "Febrero",
+            "Marzo",
+            "Abril",
+            "Mayo",
+            "Junio",
+            "Julio",
+            "Agosto",
+            "Septiembre",
+            "Octubre",
+            "Noviembre",
+            "Diciembre",
+        ]
+        monthly_totals = (
+            queryset.filter(issue_date__year=current_date.year)
+            .annotate(month=ExtractMonth("issue_date"))
+            .values("month")
+            .annotate(
+                total=Coalesce(
+                    Sum("total"),
+                    Value(0),
+                    output_field=DecimalField(max_digits=14, decimal_places=2),
+                )
+            )
+            .order_by("month")
+        )
+        monthly_map = {row["month"]: row["total"] for row in monthly_totals}
+        last_months = []
+        for offset in range(5, -1, -1):
+            month_value = ((current_date.month - offset - 1) % 12) + 1
+            last_months.append(
+                {
+                    "label": month_labels[month_value - 1][:3],
+                    "total": monthly_map.get(month_value, 0),
+                }
+            )
+        max_total = max((item["total"] for item in last_months), default=0) or 1
+        for item in last_months:
+            item["pct"] = round((float(item["total"]) / float(max_total)) * 100)
+
+        customer_count = customer_queryset.count()
+        active_customer_rate = 0
+        if Customer.objects.exists():
+            active_customer_rate = round((customer_count / Customer.objects.count()) * 100)
+
+        context.update(
+            {
+                "customer_count": customer_count,
+                "model_count": CameraModel.objects.count(),
+                "quote_count": totals["total_quotes"],
+                "total_amount": totals["total_amount"],
+                "accepted_total": accepted_total,
+                "accepted_count": totals["accepted_count"],
+                "sent_count": totals["sent_count"],
+                "draft_count": totals["draft_count"],
+                "rejected_count": totals["rejected_count"],
+                "expired_count": totals["expired_count"],
+                "conversion_rate": conversion_rate,
+                "top_customer": top_customer,
+                "top_seller": top_seller,
+                "top_models": top_models,
+                "last_months": last_months,
+                "active_customer_rate": active_customer_rate,
+                "today_label": current_date.strftime("%d/%m/%Y"),
+            }
+        )
+        return context
 
 
 class QuoteListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
