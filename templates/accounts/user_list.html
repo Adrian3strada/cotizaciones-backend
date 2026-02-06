@@ -11,9 +11,9 @@
             </div>
             <div class="col-sm-6 text-right">
                 {% if perms.auth.add_user %}
-                    <a class="btn btn-primary" href="{% url 'accounts:create' %}">
-                        <i class="fas fa-user-plus"></i> Nuevo usuario
-                    </a>
+                <a class="btn btn-primary" href="{% url 'accounts:create' %}">
+                    <i class="fas fa-user-plus"></i> Nuevo usuario
+                </a>
                 {% endif %}
             </div>
         </div>
@@ -41,29 +41,33 @@
                     <td>{{ user_obj.email|default:"-" }}</td>
                     <td>
                         {% if user_obj.is_active %}
-                            <span class="badge badge-success">Sí</span>
+                        <span class="badge badge-success">Sí</span>
                         {% else %}
-                            <span class="badge badge-secondary">No</span>
+                        <span class="badge badge-secondary">No</span>
                         {% endif %}
                     </td>
                     <td>
                         {% for group in user_obj.groups.all %}
-                            <span class="badge badge-info">{{ group.name }}</span>
+                        <span class="badge badge-info">{{ group.name }}</span>
                         {% empty %}
-                            <span class="text-muted">-</span>
+                        <span class="text-muted">-</span>
                         {% endfor %}
                     </td>
                     <td class="text-right">
                         {% if perms.auth.change_user %}
-                            <a class="btn btn-sm btn-outline-primary" href="{% url 'accounts:update' user_obj.pk %}">Editar</a>
+                        <a class="btn btn-sm btn-outline-primary"
+                            href="{% url 'accounts:update' user_obj.pk %}">Editar</a>
                         {% endif %}
                         {% if perms.auth.delete_user %}
-                            <a class="btn btn-sm btn-outline-danger" href="{% url 'accounts:delete' user_obj.pk %}">Eliminar</a>
+                        <a class="btn btn-sm btn-outline-danger"
+                            href="{% url 'accounts:delete' user_obj.pk %}">Eliminar</a>
                         {% endif %}
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="6">Sin usuarios.</td></tr>
+                <tr>
+                    <td colspan="6">Sin usuarios.</td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
