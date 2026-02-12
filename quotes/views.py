@@ -293,10 +293,14 @@ def quote_create(request):
     else:
         form = QuoteForm(initial={"status": Quote.STATUS_DRAFT})
         formset = QuoteItemFormSet()
+    optional_service_fields = {
+        "cableado", "cableado_monto", "instalacion", "instalacion_monto",
+        "inyector_poe", "inyector_poe_monto", "poe", "poe_monto",
+    }
     return render(
         request,
         "quotes/quote_form.html",
-        {"form": form, "formset": formset, "is_edit": False},
+        {"form": form, "formset": formset, "is_edit": False, "optional_service_fields": optional_service_fields},
     )
 
 
@@ -326,10 +330,14 @@ def quote_update(request, pk):
     else:
         form = QuoteForm(instance=quote)
         formset = QuoteItemFormSet(instance=quote)
+    optional_service_fields = {
+        "cableado", "cableado_monto", "instalacion", "instalacion_monto",
+        "inyector_poe", "inyector_poe_monto", "poe", "poe_monto",
+    }
     return render(
         request,
         "quotes/quote_form.html",
-        {"form": form, "formset": formset, "is_edit": True, "quote": quote},
+        {"form": form, "formset": formset, "is_edit": True, "quote": quote, "optional_service_fields": optional_service_fields},
     )
 
 

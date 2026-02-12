@@ -77,7 +77,8 @@
                     <th>Modelo</th>
                     <th>Cantidad</th>
                     <th>Notas configuración</th>
-                    <th>Precio unitario</th>
+                    <th>Precio unit. (fijo)</th>
+                    <th>Desc. %</th>
                     <th>Subtotal línea</th>
                 </tr>
             </thead>
@@ -88,11 +89,12 @@
                     <td>{{ item.quantity }}</td>
                     <td>{{ item.configuration_notes|default:"-" }}</td>
                     <td>{{ item.unit_price }}</td>
+                    <td>{{ item.discount_percent|floatformat:1 }}%</td>
                     <td>{{ item.line_subtotal }}</td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5">Sin items.</td>
+                    <td colspan="6">Sin items.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -103,9 +105,27 @@
             <div class="col-md-4 ml-auto">
                 <table class="table">
                     <tr>
-                        <th>Subtotal</th>
+                        <th>Subtotal (productos)</th>
                         <td class="text-right">{{ object.subtotal }}</td>
                     </tr>
+                    {% if object.cableado and object.cableado_monto %}
+                    <tr><th>Cableado</th><td class="text-right">{{ object.cableado_monto }}</td></tr>
+                    {% endif %}
+                    {% if object.instalacion and object.instalacion_monto %}
+                    <tr><th>Instalación</th><td class="text-right">{{ object.instalacion_monto }}</td></tr>
+                    {% endif %}
+                    {% if object.inyector_poe and object.inyector_poe_monto %}
+                    <tr><th>Inyector PoE</th><td class="text-right">{{ object.inyector_poe_monto }}</td></tr>
+                    {% endif %}
+                    {% if object.poe and object.poe_monto %}
+                    <tr><th>PoE</th><td class="text-right">{{ object.poe_monto }}</td></tr>
+                    {% endif %}
+                    {% if object.special_discount_percent and object.special_discount_percent > 0 %}
+                    <tr>
+                        <th>Descuento especial ({{ object.special_discount_percent|floatformat:1 }}%)</th>
+                        <td class="text-right">-{{ object.special_discount_amount }}</td>
+                    </tr>
+                    {% endif %}
                     <tr>
                         <th>IVA ({{ object.tax_rate }}%)</th>
                         <td class="text-right">{{ object.tax_amount }}</td>

@@ -1,3 +1,4 @@
+from datetime import timedelta
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 from django.conf import settings
@@ -54,6 +55,19 @@ class Quote(models.Model):
     subtotal = models.DecimalField(
         "Subtotal", max_digits=14, decimal_places=2, default=Decimal("0.00")
     )
+    special_discount_percent = models.DecimalField(
+        "Descuento especial (%)",
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        help_text="Porcentaje de descuento especial aplicado al total de productos (todos los clientes).",
+    )
+    special_discount_amount = models.DecimalField(
+        "Descuento especial (monto)",
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+    )
     tax_rate = models.DecimalField(
         "IVA (%)", max_digits=5, decimal_places=2, default=Decimal("16.00")
     )
@@ -62,6 +76,39 @@ class Quote(models.Model):
     )
     total = models.DecimalField(
         "Total", max_digits=14, decimal_places=2, default=Decimal("0.00")
+    )
+    # Servicios opcionales
+    cableado = models.BooleanField("Cableado", default=False)
+    cableado_monto = models.DecimalField(
+        "Cableado (monto)",
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        blank=True,
+    )
+    instalacion = models.BooleanField("Instalación", default=False)
+    instalacion_monto = models.DecimalField(
+        "Instalación (monto)",
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        blank=True,
+    )
+    inyector_poe = models.BooleanField("Inyector PoE", default=False)
+    inyector_poe_monto = models.DecimalField(
+        "Inyector PoE (monto)",
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        blank=True,
+    )
+    poe = models.BooleanField("PoE", default=False)
+    poe_monto = models.DecimalField(
+        "PoE (monto)",
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        blank=True,
     )
     notes = models.TextField("Notas", blank=True)
     terms = models.TextField("Términos", blank=True)
@@ -77,19 +124,22 @@ class Quote(models.Model):
         return self.quote_number
 
     def clean(self) -> None:
-        if self.valid_until is None:
-            raise ValidationError({"valid_until": "La vigencia es obligatoria."})
-        if self.issue_date and self.valid_until and self.valid_until <= self.issue_date:
-            raise ValidationError(
-                {"valid_until": "La vigencia debe ser posterior a la fecha de emisión."}
-            )
+        if self.issue_date:
+            self.valid_until = self.issue_date + timedelta(days=30)
         if self.status == self.STATUS_SENT and self.pk and not self.items.exists():
             raise ValidationError({"status": "No puedes enviar una cotización sin items."})
         if self.status == self.STATUS_SENT and not self.pk:
             # Prevent SENT on initial creation (no items yet).
             raise ValidationError({"status": "No puedes enviar una cotización sin items."})
+        discount_pct = getattr(self, "special_discount_percent", None)
+        if discount_pct is not None and (discount_pct < 0 or discount_pct > 100):
+            raise ValidationError(
+                {"special_discount_percent": "El descuento especial debe ser entre 0 y 100%."}
+            )
 
     def save(self, *args, **kwargs):
+        if self.issue_date:
+            self.valid_until = self.issue_date + timedelta(days=30)
         if self.valid_until and self.status != self.STATUS_ACCEPTED:
             if self.valid_until < timezone.localdate():
                 self.status = self.STATUS_EXPIRED
@@ -122,23 +172,49 @@ class Quote(models.Model):
                 next_number = 1
         return f"{prefix}{next_number:06d}"
 
+    def get_optional_services_total(self) -> Decimal:
+        """Suma de los montos de servicios opcionales incluidos."""
+        total = Decimal("0.00")
+        m = getattr(self, "cableado_monto", None) or Decimal("0.00")
+        if getattr(self, "cableado", False) and m > 0:
+            total += m
+        m = getattr(self, "instalacion_monto", None) or Decimal("0.00")
+        if getattr(self, "instalacion", False) and m > 0:
+            total += m
+        m = getattr(self, "inyector_poe_monto", None) or Decimal("0.00")
+        if getattr(self, "inyector_poe", False) and m > 0:
+            total += m
+        m = getattr(self, "poe_monto", None) or Decimal("0.00")
+        if getattr(self, "poe", False) and m > 0:
+            total += m
+        return total
+
     def recalculate_totals(self) -> None:
         items = self.items.all()
         subtotal = sum((item.line_subtotal or Decimal("0.00") for item in items), Decimal("0.00"))
+        optional_total = self.get_optional_services_total()
+        base_for_discount = subtotal + optional_total
+        discount_pct = getattr(self, "special_discount_percent", None) or Decimal("0.00")
+        self.special_discount_amount = (
+            base_for_discount * discount_pct / Decimal("100")
+        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        subtotal_after_discount = base_for_discount - self.special_discount_amount
+        if subtotal_after_discount < 0:
+            subtotal_after_discount = Decimal("0.00")
         tax_rate = self.tax_rate or Decimal("0.00")
         try:
-            tax_amount = (subtotal * tax_rate / Decimal("100")).quantize(
-                Decimal("0.01"),
-                rounding=ROUND_HALF_UP,
-            )
+            tax_amount = (
+                subtotal_after_discount * tax_rate / Decimal("100")
+            ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         except InvalidOperation:
             tax_amount = Decimal("0.00")
-        total = subtotal + tax_amount
+        total = subtotal_after_discount + tax_amount
         self.subtotal = subtotal
         self.tax_amount = tax_amount
         self.total = total
         Quote.objects.filter(pk=self.pk).update(
             subtotal=self.subtotal,
+            special_discount_amount=self.special_discount_amount,
             tax_amount=self.tax_amount,
             total=self.total,
         )
@@ -153,8 +229,14 @@ class QuoteItem(models.Model):
     )
     quantity = models.PositiveIntegerField("Cantidad")
     unit_price = models.DecimalField("Precio unitario", max_digits=14, decimal_places=2)
+    discount_percent = models.DecimalField(
+        "Descuento (%)",
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("0.00"),
+    )
     discount_amount = models.DecimalField(
-        "Descuento", max_digits=14, decimal_places=2, default=Decimal("0.00")
+        "Descuento (monto)", max_digits=14, decimal_places=2, default=Decimal("0.00")
     )
     line_subtotal = models.DecimalField(
         "Subtotal línea", max_digits=14, decimal_places=2, default=Decimal("0.00")
@@ -176,8 +258,11 @@ class QuoteItem(models.Model):
             raise ValidationError({"quantity": "La cantidad debe ser mayor que cero."})
         if self.unit_price is not None and self.unit_price < 0:
             raise ValidationError({"unit_price": "El precio no puede ser negativo."})
-        if self.discount_amount is not None and self.discount_amount < 0:
-            raise ValidationError({"discount_amount": "El descuento no puede ser negativo."})
+        discount_pct = self.discount_percent if hasattr(self, "discount_percent") else None
+        if discount_pct is not None and (discount_pct < 0 or discount_pct > 100):
+            raise ValidationError(
+                {"discount_percent": "El descuento debe ser un porcentaje entre 0 y 100."}
+            )
         if self.quote_id and self.camera_model_id:
             quote_currency = self.quote.currency
             model_currency = self.camera_model.currency
@@ -190,19 +275,21 @@ class QuoteItem(models.Model):
                         )
                     }
                 )
-        unit_price = self.unit_price or Decimal("0.00")
-        max_discount = self.quantity * unit_price
-        if self.discount_amount is not None and self.discount_amount > max_discount:
-            raise ValidationError({"discount_amount": "El descuento no puede exceder el subtotal."})
-
     def save(self, *args, **kwargs):
         if self.quantity is None:
             self.line_subtotal = Decimal("0.00")
             return super().save(*args, **kwargs)
-        if self.unit_price is None:
+        # Precio fijo: siempre tomar del catálogo
+        if self.camera_model_id:
             self.unit_price = self.camera_model.base_price
-        discount_amount = self.discount_amount or Decimal("0.00")
-        line_subtotal = (self.unit_price * self.quantity) - discount_amount
+        unit_price = self.unit_price or Decimal("0.00")
+        quantity = self.quantity or 0
+        discount_pct = getattr(self, "discount_percent", None) or Decimal("0.00")
+        line_before_discount = unit_price * quantity
+        self.discount_amount = (line_before_discount * discount_pct / Decimal("100")).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+        line_subtotal = line_before_discount - self.discount_amount
         if line_subtotal < 0:
             line_subtotal = Decimal("0.00")
         self.line_subtotal = line_subtotal

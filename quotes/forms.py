@@ -12,19 +12,37 @@ class QuoteForm(forms.ModelForm):
             "customer",
             "contact",
             "status",
-            "valid_until",
             "currency",
             "tax_rate",
+            "special_discount_percent",
+            "cableado",
+            "cableado_monto",
+            "instalacion",
+            "instalacion_monto",
+            "inyector_poe",
+            "inyector_poe_monto",
+            "poe",
+            "poe_monto",
             "notes",
             "terms",
         ]
         widgets = {
-            "valid_until": forms.DateInput(attrs={"type": "date"}),
+            "special_discount_percent": forms.NumberInput(
+                attrs={"min": 0, "max": 100, "step": "0.01", "placeholder": "0"}
+            ),
+            "cableado_monto": forms.NumberInput(attrs={"min": 0, "step": "0.01", "placeholder": "0"}),
+            "instalacion_monto": forms.NumberInput(attrs={"min": 0, "step": "0.01", "placeholder": "0"}),
+            "inyector_poe_monto": forms.NumberInput(attrs={"min": 0, "step": "0.01", "placeholder": "0"}),
+            "poe_monto": forms.NumberInput(attrs={"min": 0, "step": "0.01", "placeholder": "0"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["valid_until"].required = True
+        self.fields["special_discount_percent"].required = False
+        self.fields["cableado_monto"].required = False
+        self.fields["instalacion_monto"].required = False
+        self.fields["inyector_poe_monto"].required = False
+        self.fields["poe_monto"].required = False
         self.fields["contact"].queryset = CustomerContact.objects.none()
         if self.instance and self.instance.pk and self.instance.customer_id:
             self.fields["contact"].queryset = CustomerContact.objects.filter(
@@ -56,13 +74,27 @@ class QuoteItemForm(forms.ModelForm):
             "camera_model",
             "quantity",
             "unit_price",
-            "discount_amount",
+            "discount_percent",
             "configuration_notes",
         ]
+        widgets = {
+            "unit_price": forms.NumberInput(attrs={"readonly": True, "step": "0.01"}),
+            "discount_percent": forms.NumberInput(attrs={"min": 0, "max": 100, "step": "0.01"}),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["unit_price"].required = False
+        self.fields["discount_percent"].required = False
+        if self.instance and self.instance.pk and self.instance.camera_model_id:
+            self.fields["unit_price"].initial = self.instance.camera_model.base_price
+
+    def clean(self):
+        cleaned_data = super().clean()
+        camera_model = cleaned_data.get("camera_model")
+        if camera_model:
+            cleaned_data["unit_price"] = camera_model.base_price
+        return cleaned_data
 
 
 QuoteItemFormSet = inlineformset_factory(

@@ -112,34 +112,35 @@
 
         .client-section {
             display: flex;
-            gap: 10px;
-            margin: 8px 0;
+            gap: 8px;
+            margin: 4px 0;
         }
 
         .client-box {
             flex: 1;
             border: 1px solid #000;
-            padding: 8px;
-            font-size: 9px;
-            margin-left: 130px;
+            padding: 5px 6px;
+            font-size: 8px;
+            margin-left: 90px;
+            line-height: 1.1;
         }
 
         .client-box-title {
             font-weight: bold;
             text-transform: uppercase;
-            font-size: 9px;
-            margin-bottom: 4px;
+            font-size: 8px;
+            margin-bottom: 2px;
         }
 
         .client-line {
             display: flex;
-            margin: 2px 0;
-            font-size: 9px;
+            margin: 1px 0;
+            font-size: 8px;
         }
 
         .client-label {
             font-weight: bold;
-            width: 65px;
+            width: 55px;
             flex-shrink: 0;
         }
 
@@ -150,12 +151,12 @@
 
         .client-label-short {
             font-weight: bold;
-            width: 55px;
+            width: 45px;
             flex-shrink: 0;
         }
 
         .client-value-short {
-            width: 90px;
+            width: 70px;
             word-break: break-word;
         }
 
@@ -232,16 +233,19 @@
 
         .footer-table {
             position: fixed;
-            left: 16mm;
-            right: 16mm;
+            left: 0;
+            right: 0;
+            width: auto;
             bottom: 18mm;
             font-size: 8.5px;
             margin-top: 120px;
+            margin-left: 0.0in;
+            margin-right: 0.6in;
         }
 
         .footer-table td {
             border: 0;
-            padding: 3px 4px;
+            padding: 3px 4px 3px 0;
             font-size: 8.5px;
         }
 
@@ -311,7 +315,7 @@
             </div>
             <div class="title-box-row">
                 <span class="title-box-label">Vigencia:</span>
-                <span class="title-box-value">{{ quote.valid_until|date:"d \d\e F" }}</span>
+                <span class="title-box-value">30 días de vigencia</span>
             </div>
         </div>
         <div style="flex: 2;"></div>
@@ -389,8 +393,8 @@
                     {% if item.configuration_notes %}
                     <br><span class="small">{{ item.configuration_notes }}</span>
                     {% endif %}
-                    {% if item.discount_amount and item.discount_amount > 0 %}
-                    <br><span class="small">Desc.: -${{ item.discount_amount|floatformat:2 }}</span>
+                    {% if item.discount_percent and item.discount_percent > 0 %}
+                    <br><span class="small">Desc.: {{ item.discount_percent|floatformat:1 }}%</span>
                     {% endif %}
                 </td>
                 <td class="center">Pza.</td>
@@ -405,15 +409,45 @@
     <!-- Summary Table -->
     <table class="summary-table">
         <tr>
-            <td class="label">Total</td>
+            <td class="label">Subtotal (productos)</td>
             <td class="value">${{ quote.subtotal|floatformat:2 }} {{ quote.currency }}</td>
         </tr>
+        {% if quote.cableado and quote.cableado_monto %}
+        <tr>
+            <td class="label">Cableado</td>
+            <td class="value">${{ quote.cableado_monto|floatformat:2 }}</td>
+        </tr>
+        {% endif %}
+        {% if quote.instalacion and quote.instalacion_monto %}
+        <tr>
+            <td class="label">Instalación</td>
+            <td class="value">${{ quote.instalacion_monto|floatformat:2 }}</td>
+        </tr>
+        {% endif %}
+        {% if quote.inyector_poe and quote.inyector_poe_monto %}
+        <tr>
+            <td class="label">Inyector PoE</td>
+            <td class="value">${{ quote.inyector_poe_monto|floatformat:2 }}</td>
+        </tr>
+        {% endif %}
+        {% if quote.poe and quote.poe_monto %}
+        <tr>
+            <td class="label">PoE</td>
+            <td class="value">${{ quote.poe_monto|floatformat:2 }}</td>
+        </tr>
+        {% endif %}
+        {% if quote.special_discount_percent and quote.special_discount_percent > 0 %}
+        <tr>
+            <td class="label">Descuento especial ({{ quote.special_discount_percent|floatformat:1 }}%)</td>
+            <td class="value">-${{ quote.special_discount_amount|floatformat:2 }}</td>
+        </tr>
+        {% endif %}
         <tr>
             <td class="label">IVA</td>
             <td class="value">${{ quote.tax_amount|floatformat:2 }}</td>
         </tr>
         <tr>
-            <td class="label"><strong>Preción más IVA</strong></td>
+            <td class="label"><strong>Precio más IVA</strong></td>
             <td class="value"><strong>${{ quote.total|floatformat:2 }}</strong></td>
         </tr>
     </table>
@@ -430,7 +464,7 @@
         </tr>
         <tr>
             <td class="footer-label">Precios en:</td>
-            <td class="footer-value">Moneda nacional / USD</td>
+            <td class="footer-value">Precios fijos. Moneda nacional / USD</td>
             <td class="footer-label">Forma de Pago:</td>
             <td class="footer-value">{{ quote.terms|default:"Anticipo 100%" }}</td>
         </tr>

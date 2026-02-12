@@ -10,7 +10,7 @@ class QuoteItemInline(admin.TabularInline):
 
 @admin.register(Quote)
 class QuoteAdmin(admin.ModelAdmin):
-    list_display = ("quote_number", "customer", "status", "total", "valid_until")
+    list_display = ("quote_number", "customer", "status", "special_discount_percent", "total", "valid_until")
     search_fields = ("quote_number", "customer__name")
     list_filter = ("status", "currency")
     inlines = [QuoteItemInline]
@@ -18,5 +18,5 @@ class QuoteAdmin(admin.ModelAdmin):
 
 @admin.register(QuoteItem)
 class QuoteItemAdmin(admin.ModelAdmin):
-    list_display = ("quote", "camera_model", "quantity", "unit_price", "line_subtotal")
+    list_display = ("quote", "camera_model", "quantity", "unit_price", "discount_percent", "line_subtotal")
     search_fields = ("quote__quote_number", "camera_model__model_code")
