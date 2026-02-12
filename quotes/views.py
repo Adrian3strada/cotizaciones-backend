@@ -15,6 +15,7 @@ from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, TemplateView
 import json
+from decimal import Decimal
 from pathlib import Path
 
 from quotes.forms import QuoteForm, QuoteItemFormSet
@@ -206,6 +207,10 @@ class QuoteListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
                 .values_list("id", "username")
             )
         context["status_choices"] = Quote.STATUS_CHOICES
+        q = self.request.GET.copy()
+        if "page" in q:
+            q.pop("page")
+        context["filter_query_string"] = q.urlencode()
         return context
 
 
@@ -215,10 +220,24 @@ class QuoteDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     permission_required = "quotes.view_quote"
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related("customer", "sales_user")
+        queryset = (
+            super()
+            .get_queryset()
+            .select_related("customer", "contact", "sales_user")
+            .prefetch_related("items__camera_model")
+        )
         if not self.request.user.is_superuser:
             queryset = queryset.filter(sales_user=self.request.user)
         return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        quote = self.object
+        context["is_expired"] = (
+            quote.status == Quote.STATUS_EXPIRED
+            or (quote.valid_until and quote.valid_until < timezone.localdate())
+        )
+        return context
 
 
 def _count_valid_items(formset):
@@ -410,31 +429,78 @@ def quote_mark(request, pk, status):
 
 
 @login_required
+@permission_required("quotes.add_quote", raise_exception=True)
+@permission_required("quotes.view_quote", raise_exception=True)
+def quote_duplicate(request, pk):
+    quote = get_object_or_404(Quote, pk=pk)
+    if not request.user.is_superuser and quote.sales_user != request.user:
+        messages.error(request, "No tienes permiso para duplicar esta cotización.")
+        return redirect("quotes:detail", pk=pk)
+    with transaction.atomic():
+        new_quote = Quote(
+            quote_number="",
+            customer=quote.customer,
+            contact=quote.contact,
+            sales_user=request.user,
+            status=Quote.STATUS_DRAFT,
+            currency=quote.currency,
+            tax_rate=quote.tax_rate,
+            special_discount_percent=quote.special_discount_percent,
+            cableado=quote.cableado,
+            cableado_monto=quote.cableado_monto or Decimal("0.00"),
+            instalacion=quote.instalacion,
+            instalacion_monto=quote.instalacion_monto or Decimal("0.00"),
+            inyector_poe=quote.inyector_poe,
+            inyector_poe_monto=quote.inyector_poe_monto or Decimal("0.00"),
+            poe=quote.poe,
+            poe_monto=quote.poe_monto or Decimal("0.00"),
+            notes=quote.notes or "",
+        )
+        new_quote.save()
+        for item in quote.items.all():
+            QuoteItem.objects.create(
+                quote=new_quote,
+                camera_model=item.camera_model,
+                quantity=item.quantity,
+                unit_price=item.unit_price,
+                discount_percent=item.discount_percent,
+                configuration_notes=item.configuration_notes or "",
+            )
+        new_quote.recalculate_totals()
+    messages.success(request, "Cotización duplicada. Puedes editarla ahora.")
+    return redirect("quotes:update", pk=new_quote.pk)
+
+
+@login_required
 @permission_required("quotes.view_quote", raise_exception=True)
 def quote_pdf(request, pk):
+    from django.conf import settings as django_settings
+
     quote = get_object_or_404(Quote, pk=pk)
     from weasyprint import HTML
+
     logo_path = finders.find("img/logo.png")
     header_right_path = finders.find("img/quote_header_rigth.png")
     logo_uri = _build_file_uri(logo_path)
     header_right_uri = _build_file_uri(header_right_path)
-    html_string = render_to_string(
-        "quotes/quote_pdf.html",
-        {
-            "quote": quote,
-            "company_name": "Sistemas de Conteo de Personas.",
-            "company_website": "www.sisconper.com",
-            "company_street": "Blvd. Paseo de la República No. 13020 Int. 1307",
-            "company_colony": "Col. Juriquilla, Querétaro, Qro.",
-            "company_postal_code": "C.P. 76230",
-            "company_phone": "(442) 245 7000",
-            "company_mobile": "",
-            "company_rfc": "SCP070410C43",
-            "company_email": "info@sisconper.com",
-            "company_logo_uri": logo_uri,
-            "header_right_uri": header_right_uri,
-        },
-    )
+    company = getattr(django_settings, "QUOTE_PDF_COMPANY", {}) or {}
+    pdf_context = {
+        "quote": quote,
+        "company_name": company.get("name", "Sistemas de Conteo de Personas."),
+        "company_website": company.get("website", "www.sisconper.com"),
+        "company_street": company.get(
+            "street", "Blvd. Paseo de la República No. 13020 Int. 1307"
+        ),
+        "company_colony": company.get("colony", "Col. Juriquilla, Querétaro, Qro."),
+        "company_postal_code": company.get("postal_code", "C.P. 76230"),
+        "company_phone": company.get("phone", "(442) 245 7000"),
+        "company_mobile": company.get("mobile", ""),
+        "company_rfc": company.get("rfc", "SCP070410C43"),
+        "company_email": company.get("email", "info@sisconper.com"),
+        "company_logo_uri": logo_uri,
+        "header_right_uri": header_right_uri,
+    }
+    html_string = render_to_string("quotes/quote_pdf.html", pdf_context)
     pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
     response = HttpResponse(pdf_file, content_type="application/pdf")
     filename_number = quote.quote_number

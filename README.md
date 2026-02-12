@@ -57,6 +57,20 @@ WeasyPrint requiere dependencias del sistema. En Windows puede ser necesario:
 
 Guía oficial: https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#windows
 
+## PDF – Datos de empresa
+
+Los datos de la empresa en el PDF (nombre, RFC, dirección, teléfono, etc.) se leen de `settings.QUOTE_PDF_COMPANY`, que a su vez puede sobreescribirse con variables de entorno:
+
+- `QUOTE_PDF_COMPANY_NAME`
+- `QUOTE_PDF_COMPANY_WEBSITE`
+- `QUOTE_PDF_COMPANY_STREET`
+- `QUOTE_PDF_COMPANY_COLONY`
+- `QUOTE_PDF_COMPANY_POSTAL_CODE`
+- `QUOTE_PDF_COMPANY_PHONE`
+- `QUOTE_PDF_COMPANY_MOBILE`
+- `QUOTE_PDF_COMPANY_RFC`
+- `QUOTE_PDF_COMPANY_EMAIL`
+
 ## Comandos útiles
 
 - Crear migraciones: `python manage.py makemigrations`

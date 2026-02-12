@@ -170,3 +170,19 @@ LOGIN_REDIRECT_URL = 'quotes:dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Datos de empresa para el PDF de cotizaciones (personalizables por entorno)
+QUOTE_PDF_COMPANY = {
+    "name": os.environ.get("QUOTE_PDF_COMPANY_NAME", "Sistemas de Conteo de Personas."),
+    "website": os.environ.get("QUOTE_PDF_COMPANY_WEBSITE", "www.sisconper.com"),
+    "street": os.environ.get(
+        "QUOTE_PDF_COMPANY_STREET",
+        "Blvd. Paseo de la República No. 13020 Int. 1307",
+    ),
+    "colony": os.environ.get("QUOTE_PDF_COMPANY_COLONY", "Col. Juriquilla, Querétaro, Qro."),
+    "postal_code": os.environ.get("QUOTE_PDF_COMPANY_POSTAL_CODE", "C.P. 76230"),
+    "phone": os.environ.get("QUOTE_PDF_COMPANY_PHONE", "(442) 245 7000"),
+    "mobile": os.environ.get("QUOTE_PDF_COMPANY_MOBILE", ""),
+    "rfc": os.environ.get("QUOTE_PDF_COMPANY_RFC", "SCP070410C43"),
+    "email": os.environ.get("QUOTE_PDF_COMPANY_EMAIL", "info@sisconper.com"),
+}

@@ -12,6 +12,7 @@ urlpatterns = [
     path("cotizaciones/<int:pk>/editar/", views.quote_update, name="update"),
     path("cotizaciones/<int:pk>/enviar/", views.quote_send, name="send"),
     path("cotizaciones/<int:pk>/estado/<str:status>/", views.quote_mark, name="mark"),
+    path("cotizaciones/<int:pk>/duplicar/", views.quote_duplicate, name="duplicate"),
     path("cotizaciones/<int:pk>/pdf/", views.quote_pdf, name="pdf"),
     path("reportes/", views.report_view, name="report"),
 ]

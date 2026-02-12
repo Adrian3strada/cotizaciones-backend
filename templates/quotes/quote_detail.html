@@ -12,18 +12,21 @@
             <div class="col-sm-6 text-right">
                 {% if perms.quotes.change_quote %}
                 <a class="btn btn-outline-primary" href="{% url 'quotes:update' object.pk %}">Editar</a>
+                {% if perms.quotes.add_quote %}
+                <a class="btn btn-outline-secondary" href="{% url 'quotes:duplicate' object.pk %}"><i class="fas fa-copy mr-1"></i> Duplicar</a>
+                {% endif %}
                 {% if object.status == 'DRAFT' %}
-                <form method="post" action="{% url 'quotes:send' object.pk %}" class="d-inline">
+                <form method="post" action="{% url 'quotes:send' object.pk %}" class="d-inline" onsubmit="return confirm('¿Enviar esta cotización al cliente?');">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-outline-info">Enviar</button>
                 </form>
                 {% endif %}
                 {% if object.status == 'SENT' %}
-                <form method="post" action="{% url 'quotes:mark' object.pk 'ACCEPTED' %}" class="d-inline">
+                <form method="post" action="{% url 'quotes:mark' object.pk 'ACCEPTED' %}" class="d-inline" onsubmit="return confirm('¿Marcar esta cotización como Aceptada?');">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-outline-success">Aceptar</button>
                 </form>
-                <form method="post" action="{% url 'quotes:mark' object.pk 'REJECTED' %}" class="d-inline">
+                <form method="post" action="{% url 'quotes:mark' object.pk 'REJECTED' %}" class="d-inline" onsubmit="return confirm('¿Marcar esta cotización como Rechazada?');">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-outline-danger">Rechazar</button>
                 </form>
@@ -34,6 +37,13 @@
         </div>
     </div>
 </div>
+
+{% if is_expired %}
+<div class="alert alert-warning mb-3">
+    <i class="fas fa-exclamation-triangle mr-2"></i>
+    <strong>Esta cotización está expirada.</strong> Vigencia: {{ object.valid_until }}. Puedes duplicarla para generar una nueva con vigencia actual.
+</div>
+{% endif %}
 
 <div class="card">
     <div class="card-body">
