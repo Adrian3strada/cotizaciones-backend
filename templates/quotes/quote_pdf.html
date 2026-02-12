@@ -269,6 +269,36 @@
             margin-bottom: 4px;
             font-size: 9px;
         }
+
+        .optional-zone {
+            margin-top: 12px;
+            padding: 8px 0;
+            min-height: 60px;
+        }
+
+        .optional-total-box {
+            margin-top: 8px;
+            margin-left: auto;
+            width: auto;
+            border: none !important;
+            border-collapse: collapse;
+        }
+
+        .optional-total-box td {
+            border: none !important;
+            padding: 3px 10px 3px 0;
+        }
+
+        .optional-total-box .label {
+            font-weight: bold;
+            text-align: right;
+            width: 120px;
+        }
+
+        .optional-total-box .value {
+            text-align: right;
+            width: 100px;
+        }
     </style>
 </head>
 
@@ -406,39 +436,15 @@
         </tbody>
     </table>
 
-    <!-- Summary Table -->
+    <!-- Resumen solo productos (sin opcionales; los opcionales van en su tabla abajo) -->
     <table class="summary-table">
         <tr>
             <td class="label">Subtotal (productos)</td>
             <td class="value">${{ quote.subtotal|floatformat:2 }} {{ quote.currency }}</td>
         </tr>
-        {% if quote.cableado and quote.cableado_monto %}
-        <tr>
-            <td class="label">Cableado</td>
-            <td class="value">${{ quote.cableado_monto|floatformat:2 }}</td>
-        </tr>
-        {% endif %}
-        {% if quote.instalacion and quote.instalacion_monto %}
-        <tr>
-            <td class="label">Instalación</td>
-            <td class="value">${{ quote.instalacion_monto|floatformat:2 }}</td>
-        </tr>
-        {% endif %}
-        {% if quote.inyector_poe and quote.inyector_poe_monto %}
-        <tr>
-            <td class="label">Inyector PoE</td>
-            <td class="value">${{ quote.inyector_poe_monto|floatformat:2 }}</td>
-        </tr>
-        {% endif %}
-        {% if quote.poe and quote.poe_monto %}
-        <tr>
-            <td class="label">PoE</td>
-            <td class="value">${{ quote.poe_monto|floatformat:2 }}</td>
-        </tr>
-        {% endif %}
         {% if quote.special_discount_percent and quote.special_discount_percent > 0 %}
         <tr>
-            <td class="label">Descuento especial ({{ quote.special_discount_percent|floatformat:1 }}%)</td>
+            <td class="label">Descuento ({{ quote.special_discount_percent|floatformat:1 }}%)</td>
             <td class="value">-${{ quote.special_discount_amount|floatformat:2 }}</td>
         </tr>
         {% endif %}
@@ -451,6 +457,76 @@
             <td class="value"><strong>${{ quote.total|floatformat:2 }}</strong></td>
         </tr>
     </table>
+
+    <!-- Zona opcionales: siempre se muestran la tabla y columnas -->
+    <div class="optional-zone">
+        <div class="section-title">Opcional</div>
+        <table style="width: 100%; margin-top: 4px;">
+            <thead class="items-header">
+                <tr>
+                    <th class="center" style="width: 8%;">Partida</th>
+                    <th style="width: 12%;">No de parte</th>
+                    <th style="width: 40%;">Descripción</th>
+                    <th class="center" style="width: 10%;">Unidad</th>
+                    <th class="center" style="width: 10%;">Cantidad</th>
+                    <th class="right" style="width: 12%;">Precio Unitario</th>
+                    <th class="right" style="width: 12%;">Total</th>
+                </tr>
+            </thead>
+            <tbody class="items-body">
+                {% if quote.cableado or quote.cableado_monto %}
+                <tr>
+                    <td class="center">—</td>
+                    <td>—</td>
+                    <td>Cableado</td>
+                    <td class="center">Serv.</td>
+                    <td class="center">1</td>
+                    <td class="right">${{ quote.cableado_monto|floatformat:2 }}</td>
+                    <td class="right">${{ quote.cableado_monto|floatformat:2 }}</td>
+                </tr>
+                {% endif %}
+                {% if quote.instalacion or quote.instalacion_monto %}
+                <tr>
+                    <td class="center">—</td>
+                    <td>—</td>
+                    <td>Instalación</td>
+                    <td class="center">Serv.</td>
+                    <td class="center">1</td>
+                    <td class="right">${{ quote.instalacion_monto|floatformat:2 }}</td>
+                    <td class="right">${{ quote.instalacion_monto|floatformat:2 }}</td>
+                </tr>
+                {% endif %}
+                {% if quote.inyector_poe or quote.inyector_poe_monto %}
+                <tr>
+                    <td class="center">—</td>
+                    <td>—</td>
+                    <td>Inyector PoE</td>
+                    <td class="center">Serv.</td>
+                    <td class="center">1</td>
+                    <td class="right">${{ quote.inyector_poe_monto|floatformat:2 }}</td>
+                    <td class="right">${{ quote.inyector_poe_monto|floatformat:2 }}</td>
+                </tr>
+                {% endif %}
+                {% if quote.poe or quote.poe_monto %}
+                <tr>
+                    <td class="center">—</td>
+                    <td>—</td>
+                    <td>PoE</td>
+                    <td class="center">Serv.</td>
+                    <td class="center">1</td>
+                    <td class="right">${{ quote.poe_monto|floatformat:2 }}</td>
+                    <td class="right">${{ quote.poe_monto|floatformat:2 }}</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+        <table class="optional-total-box">
+            <tr>
+                <td class="label">Total (opcionales)</td>
+                <td class="value">${{ quote.get_optional_services_total|floatformat:2 }} {{ quote.currency }}</td>
+            </tr>
+        </table>
+    </div>
 
     <div class="clear"></div>
 

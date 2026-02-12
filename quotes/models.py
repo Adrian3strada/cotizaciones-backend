@@ -172,6 +172,25 @@ class Quote(models.Model):
                 next_number = 1
         return f"{prefix}{next_number:06d}"
 
+    @property
+    def products_total_after_discount(self) -> Decimal:
+        """Total de productos después del descuento (sin opcionales)."""
+        st = self.subtotal or Decimal("0.00")
+        disc = getattr(self, "special_discount_amount", None) or Decimal("0.00")
+        return (st - disc).quantize(Decimal("0.01")) if (st - disc) >= 0 else Decimal("0.00")
+
+    @property
+    def subtotal_after_discount(self) -> Decimal:
+        """Subtotal total después de descuento (productos + opcionales, base para IVA)."""
+        if self.total is not None and self.tax_amount is not None:
+            return (self.total - self.tax_amount).quantize(Decimal("0.01"))
+        return Decimal("0.00")
+
+    @property
+    def base_before_discount(self) -> Decimal:
+        """Subtotal productos (antes de descuento)."""
+        return self.subtotal or Decimal("0.00")
+
     def get_optional_services_total(self) -> Decimal:
         """Suma de los montos de servicios opcionales incluidos."""
         total = Decimal("0.00")
@@ -193,22 +212,24 @@ class Quote(models.Model):
         items = self.items.all()
         subtotal = sum((item.line_subtotal or Decimal("0.00") for item in items), Decimal("0.00"))
         optional_total = self.get_optional_services_total()
-        base_for_discount = subtotal + optional_total
+        # Descuento solo sobre productos (cámaras), no sobre opcionales
         discount_pct = getattr(self, "special_discount_percent", None) or Decimal("0.00")
         self.special_discount_amount = (
-            base_for_discount * discount_pct / Decimal("100")
+            subtotal * discount_pct / Decimal("100")
         ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-        subtotal_after_discount = base_for_discount - self.special_discount_amount
-        if subtotal_after_discount < 0:
-            subtotal_after_discount = Decimal("0.00")
+        products_total = subtotal - self.special_discount_amount
+        if products_total < 0:
+            products_total = Decimal("0.00")
+        # Base para IVA = total productos (con descuento) + total opcionales
+        base_for_iva = products_total + optional_total
         tax_rate = self.tax_rate or Decimal("0.00")
         try:
             tax_amount = (
-                subtotal_after_discount * tax_rate / Decimal("100")
+                base_for_iva * tax_rate / Decimal("100")
             ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         except InvalidOperation:
             tax_amount = Decimal("0.00")
-        total = subtotal_after_discount + tax_amount
+        total = base_for_iva + tax_amount
         self.subtotal = subtotal
         self.tax_amount = tax_amount
         self.total = total

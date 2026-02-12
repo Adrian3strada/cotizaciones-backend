@@ -122,16 +122,30 @@
                     {% endif %}
                     {% if object.special_discount_percent and object.special_discount_percent > 0 %}
                     <tr>
-                        <th>Descuento especial ({{ object.special_discount_percent|floatformat:1 }}%)</th>
+                        <th>Descuento ({{ object.special_discount_percent|floatformat:1 }}%)</th>
                         <td class="text-right">-{{ object.special_discount_amount }}</td>
                     </tr>
                     {% endif %}
+                    <tr>
+                        <th>Total (productos)</th>
+                        <td class="text-right">{{ object.products_total_after_discount }} {{ object.currency }}</td>
+                    </tr>
+                    {% if object.cableado and object.cableado_monto or object.instalacion and object.instalacion_monto or object.inyector_poe and object.inyector_poe_monto or object.poe and object.poe_monto %}
+                    <tr>
+                        <th>Total (opcionales)</th>
+                        <td class="text-right">{{ object.get_optional_services_total }} {{ object.currency }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <th>Total</th>
+                        <td class="text-right">{{ object.subtotal_after_discount }} {{ object.currency }}</td>
+                    </tr>
                     <tr>
                         <th>IVA ({{ object.tax_rate }}%)</th>
                         <td class="text-right">{{ object.tax_amount }}</td>
                     </tr>
                     <tr>
-                        <th>Total</th>
+                        <th><strong>Precio más IVA</strong></th>
                         <td class="text-right"><strong>{{ object.total }}</strong></td>
                     </tr>
                 </table>
