@@ -39,6 +39,48 @@ body {
     color: #dfefff;
 }
 
+/* Barra superior: logo e icono */
+.navbar-enhanced .navbar-brand-img {
+    height: 36px;
+    width: auto;
+    max-width: 120px;
+    object-fit: contain;
+    display: block;
+    border-radius: 6px;
+}
+
+.navbar-enhanced .nav-brand-icon {
+    padding: 6px 10px 6px 4px;
+    line-height: 1;
+}
+
+.navbar-enhanced .nav-brand-icon:hover {
+    opacity: 0.95;
+}
+
+.navbar-enhanced .nav-user-divider .nav-link-text {
+    font-weight: 500;
+    padding-right: 0.5rem;
+}
+
+.navbar-enhanced .btn-nav-logout {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.navbar-enhanced .btn-nav-logout:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: #fff;
+}
+
 .main-sidebar {
     background: linear-gradient(180deg, #081f33, #0b2f4b, #173b5b);
 }
@@ -160,6 +202,36 @@ body {
 .theme-dark .btn-secondary {
     background-color: rgba(60, 75, 95, 0.9);
     border-color: rgba(60, 75, 95, 0.9);
+}
+
+.theme-dark .card-footer {
+    background-color: rgba(16, 27, 40, 0.9);
+    border-top: 1px solid var(--brand-border);
+    color: var(--brand-text);
+}
+
+.theme-dark .pagination .page-link {
+    background-color: rgba(10, 18, 28, 0.9);
+    border-color: rgba(86, 127, 175, 0.35);
+    color: var(--brand-text);
+}
+
+.theme-dark .pagination .page-link:hover {
+    background-color: rgba(20, 34, 52, 0.9);
+    border-color: rgba(86, 127, 175, 0.5);
+    color: #fff;
+}
+
+.theme-dark .pagination .page-item.active .page-link {
+    background-color: rgba(72, 146, 255, 0.4);
+    border-color: rgba(72, 146, 255, 0.6);
+    color: #fff;
+}
+
+.theme-dark .pagination .page-item.disabled .page-link {
+    background-color: rgba(10, 18, 28, 0.5);
+    border-color: rgba(86, 127, 175, 0.2);
+    color: var(--brand-muted);
 }
 
 .theme-dark .form-control {

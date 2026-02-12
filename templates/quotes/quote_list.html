@@ -104,7 +104,7 @@
                         {% else %}
                         <span class="badge badge-warning">{{ quote.get_status_display }}</span>
                         {% endif %}
-                    </td>
+                    </td>|
                     <td>{{ quote.total }} {{ quote.currency }}</td>
                     <td>{{ quote.valid_until }}{% if quote.status == 'EXPIRED' %} <i class="fas fa-exclamation-triangle text-warning" title="Expirada"></i>{% endif %}</td>
                 </tr>

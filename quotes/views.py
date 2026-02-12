@@ -157,7 +157,7 @@ class QuoteListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = Quote
     template_name = "quotes/quote_list.html"
     permission_required = "quotes.view_quote"
-    paginate_by = 20
+    paginate_by = 10
 
     def get_queryset(self):
         queryset = super().get_queryset().select_related("customer", "sales_user")
