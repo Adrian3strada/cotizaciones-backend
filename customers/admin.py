@@ -12,6 +12,6 @@ class CustomerAdmin(admin.ModelAdmin):
 
 @admin.register(CustomerContact)
 class CustomerContactAdmin(admin.ModelAdmin):
-    list_display = ("full_name", "customer", "email", "phone", "is_primary")
+    list_display = ("full_name", "customer", "email", "phone", "mobile", "is_primary")
     search_fields = ("full_name", "email", "phone", "customer__name")
     list_filter = ("is_primary",)

@@ -41,6 +41,7 @@ class CustomerContact(models.Model):
     full_name = models.CharField("Nombre completo", max_length=255)
     email = models.EmailField("Email", blank=True)
     phone = models.CharField("Teléfono", max_length=50, blank=True)
+    mobile = models.CharField("Celular", max_length=50, blank=True)
     position = models.CharField("Puesto", max_length=100, blank=True)
     is_primary = models.BooleanField("Es principal", default=False)
     created_at = models.DateTimeField("Creado", auto_now_add=True)

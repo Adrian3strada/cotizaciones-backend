@@ -173,6 +173,84 @@ body {
     box-shadow: 0 0 0 0.15rem rgba(98, 195, 255, 0.25);
 }
 
+/* Quote form – Items table */
+.quote-items-card .card-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.quote-items-card .table {
+    margin-bottom: 0;
+}
+
+.quote-items-card .table thead th {
+    font-weight: 600;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.quote-items-card .table thead th:nth-child(1) { width: 22%; }   /* Modelo */
+.quote-items-card .table thead th:nth-child(2) { width: 8%; }     /* Cantidad */
+.quote-items-card .table thead th:nth-child(3) { width: 12%; }   /* Precio unitario */
+.quote-items-card .table thead th:nth-child(4) { width: 10%; }   /* Descuento */
+.quote-items-card .table thead th:nth-child(5) { width: 38%; }   /* Notas configuración */
+.quote-items-card .table thead th:nth-child(6) { width: 10%; min-width: 70px; }  /* Eliminar */
+
+.quote-items-card .table tbody td {
+    vertical-align: middle;
+}
+
+.quote-items-card .table tbody tr:hover {
+    background-color: rgba(20, 34, 52, 0.85);
+}
+
+.quote-items-card .table select.form-control,
+.quote-items-card .table input.form-control {
+    min-height: 38px;
+}
+
+.quote-items-card .table textarea.form-control {
+    min-height: 56px;
+    resize: vertical;
+}
+
+.quote-items-card .input-readonly {
+    background-color: rgba(16, 27, 40, 0.95) !important;
+    color: var(--brand-muted) !important;
+    cursor: not-allowed;
+    border-style: dashed;
+    border-color: rgba(86, 127, 175, 0.25);
+}
+
+.quote-items-card .input-readonly:focus {
+    box-shadow: none;
+    border-color: rgba(86, 127, 175, 0.25);
+}
+
+.quote-items-card .input-readonly::-webkit-outer-spin-button,
+.quote-items-card .input-readonly::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.quote-items-card .input-readonly[type="number"] {
+    -moz-appearance: textfield;
+}
+
+.quote-items-card .input-number-narrow {
+    width: 100%;
+    max-width: 90px;
+}
+
+#add-item-row {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+#add-item-row:hover {
+    transform: translateY(-1px);
+}
+
 .theme-dark label {
     color: rgba(234, 242, 255, 0.7);
     font-weight: 600;

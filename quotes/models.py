@@ -110,7 +110,7 @@ class Quote(models.Model):
         default=Decimal("0.00"),
         blank=True,
     )
-    notes = models.TextField("Notas", blank=True)
+    notes = models.TextField("Observaciones", blank=True)
     terms = models.TextField("Términos", blank=True)
     created_at = models.DateTimeField("Creado", auto_now_add=True)
     updated_at = models.DateTimeField("Actualizado", auto_now=True)
@@ -207,6 +207,36 @@ class Quote(models.Model):
         if getattr(self, "poe", False) and m > 0:
             total += m
         return total
+
+    def get_optional_rows(self) -> list[dict]:
+        """Lista de filas opcionales con partida consecutiva (sigue a los ítems de productos)."""
+        base_partida = self.items.count()
+        rows = []
+        if getattr(self, "cableado", False) or (getattr(self, "cableado_monto", None) or 0) > 0:
+            rows.append({
+                "partida": base_partida + len(rows) + 1,
+                "desc": "Cableado",
+                "monto": getattr(self, "cableado_monto", None) or Decimal("0.00"),
+            })
+        if getattr(self, "instalacion", False) or (getattr(self, "instalacion_monto", None) or 0) > 0:
+            rows.append({
+                "partida": base_partida + len(rows) + 1,
+                "desc": "Instalación",
+                "monto": getattr(self, "instalacion_monto", None) or Decimal("0.00"),
+            })
+        if getattr(self, "inyector_poe", False) or (getattr(self, "inyector_poe_monto", None) or 0) > 0:
+            rows.append({
+                "partida": base_partida + len(rows) + 1,
+                "desc": "Inyector PoE",
+                "monto": getattr(self, "inyector_poe_monto", None) or Decimal("0.00"),
+            })
+        if getattr(self, "poe", False) or (getattr(self, "poe_monto", None) or 0) > 0:
+            rows.append({
+                "partida": base_partida + len(rows) + 1,
+                "desc": "PoE",
+                "monto": getattr(self, "poe_monto", None) or Decimal("0.00"),
+            })
+        return rows
 
     def recalculate_totals(self) -> None:
         items = self.items.all()

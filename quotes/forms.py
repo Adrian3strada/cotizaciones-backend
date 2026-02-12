@@ -24,7 +24,6 @@ class QuoteForm(forms.ModelForm):
             "poe",
             "poe_monto",
             "notes",
-            "terms",
         ]
         widgets = {
             "special_discount_percent": forms.NumberInput(
@@ -78,8 +77,26 @@ class QuoteItemForm(forms.ModelForm):
             "configuration_notes",
         ]
         widgets = {
-            "unit_price": forms.NumberInput(attrs={"readonly": True, "step": "0.01"}),
-            "discount_percent": forms.NumberInput(attrs={"min": 0, "max": 100, "step": "0.01"}),
+            "unit_price": forms.NumberInput(
+                attrs={
+                    "readonly": True,
+                    "step": "0.01",
+                    "class": "form-control input-readonly",
+                }
+            ),
+            "discount_percent": forms.NumberInput(
+                attrs={"min": 0, "max": 100, "step": "0.01", "class": "form-control input-number-narrow"}
+            ),
+            "quantity": forms.NumberInput(
+                attrs={"min": 1, "class": "form-control input-number-narrow"}
+            ),
+            "configuration_notes": forms.Textarea(
+                attrs={
+                    "rows": 2,
+                    "placeholder": "Observaciones o notas para este producto…",
+                    "class": "form-control form-control-sm",
+                }
+            ),
         }
 
     def __init__(self, *args, **kwargs):

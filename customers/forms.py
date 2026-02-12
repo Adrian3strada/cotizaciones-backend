@@ -24,6 +24,7 @@ class CustomerContactForm(forms.ModelForm):
             "full_name",
             "email",
             "phone",
+            "mobile",
             "position",
             "is_primary",
         ]

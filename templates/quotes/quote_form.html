@@ -110,11 +110,11 @@
                 </div>
             </div>
 
-            <div class="card mt-3">
+            <div class="card mt-3 quote-items-card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="card-title mb-0">Items</h3>
                     <button type="button" class="btn btn-sm btn-outline-primary" id="add-item-row">
-                        + Agregar item
+                        <i class="fas fa-plus mr-1"></i> Agregar item
                     </button>
                 </div>
                 <div class="card-body table-responsive p-0">
@@ -128,7 +128,7 @@
                     </div>
                     {% endif %}
 
-                    <table class="table table-bordered table-striped mb-0">
+                    <table class="table table-bordered table-striped table-hover mb-0">
                         <thead>
                             <tr>
                                 <th>Modelo</th>
@@ -141,7 +141,7 @@
                         </thead>
                         <tbody id="items-formset">
                             {% for item_form in formset %}
-                            <tr>
+                            <tr class="item-form-row">
                                 <td>
                                     {{ item_form.id }}{{ item_form.camera_model }}
                                     {% for error in item_form.camera_model.errors %}
@@ -172,9 +172,14 @@
                                     <div class="text-danger">{{ error }}</div>
                                     {% endfor %}
                                 </td>
-                                <td>
+                                <td class="text-center item-row-actions">
                                     {% if item_form.instance.pk %}
-                                    {{ item_form.DELETE }}
+                                    <label class="mb-0 d-inline-flex align-items-center">
+                                        {{ item_form.DELETE }}
+                                        <span class="ml-1">Quitar</span>
+                                    </label>
+                                    {% else %}
+                                    <a href="#" class="remove-item-row text-danger">Quitar</a>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -197,19 +202,20 @@
         </form>
 
         <template id="empty-form-row">
-            <tr>
+            <tr class="item-form-row">
                 <td>{{ formset.empty_form.id }}{{ formset.empty_form.camera_model }}</td>
                 <td>{{ formset.empty_form.quantity }}</td>
                 <td>{{ formset.empty_form.unit_price }}</td>
                 <td>{{ formset.empty_form.discount_percent }}</td>
                 <td>{{ formset.empty_form.configuration_notes }}</td>
-                <td></td>
+                <td class="text-center item-row-actions"><a href="#" class="remove-item-row text-danger">Quitar</a></td>
             </tr>
         </template>
     </div>
 </div>
 
 <script>
+    window.cameraModelPrices = {{ camera_model_prices|default:"{}"|safe }};
     (function () {
         const customerSelect = document.getElementById("id_customer");
         const contactSelect = document.getElementById("id_contact");
@@ -217,6 +223,19 @@
         const formsetBody = document.getElementById("items-formset");
         const emptyRowTemplate = document.getElementById("empty-form-row");
         const totalForms = document.getElementById("id_{{ formset.prefix }}-TOTAL_FORMS");
+
+        if (formsetBody && window.cameraModelPrices) {
+            formsetBody.addEventListener("change", function (e) {
+                if (e.target.name && e.target.name.indexOf("camera_model") !== -1 && e.target.tagName === "SELECT") {
+                    const row = e.target.closest("tr");
+                    if (!row) return;
+                    const unitPriceInput = row.querySelector('input[name*="unit_price"]');
+                    if (!unitPriceInput) return;
+                    const price = window.cameraModelPrices[e.target.value];
+                    unitPriceInput.value = price !== undefined ? price : "";
+                }
+            });
+        }
 
         function setContactOptions(contacts, selectedId) {
             if (!contactSelect) return;
@@ -272,8 +291,49 @@
             if (newRow) {
                 formsetBody.appendChild(newRow);
                 totalForms.value = formIndex + 1;
+                applyFormStylesToRow(newRow);
             }
         });
+
+        function applyFormStylesToRow(row) {
+            if (!row) return;
+            row.querySelectorAll("input:not([type=checkbox]):not([type=radio]), select, textarea").forEach(function (el) {
+                el.classList.add("form-control");
+            });
+            row.querySelectorAll("input[type=checkbox], input[type=radio]").forEach(function (el) {
+                el.classList.remove("form-control");
+                el.classList.add("form-check-input");
+            });
+        }
+
+        formsetBody.addEventListener("click", function (e) {
+            const quitar = e.target.closest("a.remove-item-row");
+            if (!quitar) return;
+            e.preventDefault();
+            const row = quitar.closest("tr");
+            if (!row) return;
+            const deleteCheckbox = row.querySelector('input[name*="-DELETE"]');
+            if (deleteCheckbox) {
+                deleteCheckbox.checked = true;
+                row.style.opacity = "0.5";
+                row.style.pointerEvents = "none";
+            } else {
+                row.remove();
+                const total = parseInt(totalForms.value, 10);
+                totalForms.value = Math.max(0, total - 1);
+                renumberFormsetRows();
+            }
+        });
+
+        function renumberFormsetRows() {
+            const rows = formsetBody.querySelectorAll("tr.item-form-row");
+            rows.forEach(function (tr, newIndex) {
+                tr.querySelectorAll("input, select, textarea").forEach(function (el) {
+                    if (el.name) el.name = el.name.replace(/^([^-]+)-\d+-/, "$1-" + newIndex + "-");
+                    if (el.id) el.id = el.id.replace(/^id_([^-]+)-\d+-/, "id_$1-" + newIndex + "-");
+                });
+            });
+        }
     })();
 </script>
 {% endblock %}

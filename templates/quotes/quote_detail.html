@@ -59,8 +59,7 @@
                     {% endif %}
                 </p>
                 <p><strong>Vigencia:</strong> {{ object.valid_until }}</p>
-                <p><strong>Notas:</strong> {{ object.notes|default:"-" }}</p>
-                <p><strong>Términos:</strong> {{ object.terms|default:"-" }}</p>
+                <p><strong>Observaciones:</strong><br>{{ object.notes|default:"-"|linebreaksbr }}</p>
             </div>
         </div>
     </div>
@@ -87,7 +86,7 @@
                 <tr>
                     <td>{{ item.camera_model }}</td>
                     <td>{{ item.quantity }}</td>
-                    <td>{{ item.configuration_notes|default:"-" }}</td>
+                    <td>{{ item.configuration_notes|default:"-"|linebreaksbr }}</td>
                     <td>{{ item.unit_price }}</td>
                     <td>{{ item.discount_percent|floatformat:1 }}%</td>
                     <td>{{ item.line_subtotal }}</td>

@@ -14,6 +14,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, TemplateView
+import json
 from pathlib import Path
 
 from quotes.forms import QuoteForm, QuoteItemFormSet
@@ -297,10 +298,20 @@ def quote_create(request):
         "cableado", "cableado_monto", "instalacion", "instalacion_monto",
         "inyector_poe", "inyector_poe_monto", "poe", "poe_monto",
     }
+    camera_model_prices = json.dumps({
+        str(pk): str(price)
+        for pk, price in CameraModel.objects.values_list("id", "base_price")
+    })
     return render(
         request,
         "quotes/quote_form.html",
-        {"form": form, "formset": formset, "is_edit": False, "optional_service_fields": optional_service_fields},
+        {
+            "form": form,
+            "formset": formset,
+            "is_edit": False,
+            "optional_service_fields": optional_service_fields,
+            "camera_model_prices": camera_model_prices,
+        },
     )
 
 
@@ -334,10 +345,21 @@ def quote_update(request, pk):
         "cableado", "cableado_monto", "instalacion", "instalacion_monto",
         "inyector_poe", "inyector_poe_monto", "poe", "poe_monto",
     }
+    camera_model_prices = json.dumps({
+        str(pk): str(price)
+        for pk, price in CameraModel.objects.values_list("id", "base_price")
+    })
     return render(
         request,
         "quotes/quote_form.html",
-        {"form": form, "formset": formset, "is_edit": True, "quote": quote, "optional_service_fields": optional_service_fields},
+        {
+            "form": form,
+            "formset": formset,
+            "is_edit": True,
+            "quote": quote,
+            "optional_service_fields": optional_service_fields,
+            "camera_model_prices": camera_model_prices,
+        },
     )
 
 

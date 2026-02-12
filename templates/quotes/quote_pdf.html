@@ -121,7 +121,7 @@
             border: 1px solid #000;
             padding: 5px 6px;
             font-size: 8px;
-            margin-left: 90px;
+            margin-left: 135px;
             line-height: 1.1;
         }
 
@@ -205,7 +205,7 @@
         }
 
         .summary-table {
-            margin-top: 8px;
+            margin-top: 18px;
             width: auto;
             float: right;
             margin-right: 2%;
@@ -258,6 +258,12 @@
             flex: 1;
         }
 
+        .footer-observaciones .footer-value {
+            vertical-align: top;
+            word-wrap: break-word;
+            white-space: normal;
+        }
+
         .footer-row {
             display: flex;
             margin: 4px 0;
@@ -265,19 +271,23 @@
 
         .section-title {
             font-weight: bold;
-            margin-top: 10px;
-            margin-bottom: 4px;
+            margin-top: 18px;
+            margin-bottom: 10px;
             font-size: 9px;
         }
 
         .optional-zone {
-            margin-top: 12px;
-            padding: 8px 0;
+            margin-top: 24px;
+            padding: 12px 0;
             min-height: 60px;
         }
 
+        .optional-zone table {
+            margin-top: 6px;
+        }
+
         .optional-total-box {
-            margin-top: 8px;
+            margin-top: 14px;
             margin-left: auto;
             width: auto;
             border: none !important;
@@ -381,7 +391,7 @@
                 <span class="client-label">Tels.</span>
                 <span class="client-value" style="width: 100px;">{{ quote.customer.phone|default:"" }}</span>
                 <span class="client-label-short">Celular:</span>
-                <span class="client-value-short">{{ quote.customer.mobile|default:"" }}</span>
+                <span class="client-value-short">{% if quote.contact %}{{ quote.contact.mobile|default:"" }}{% endif %}</span>
             </div>
             <div class="client-line">
                 <span class="client-label">Contacto:</span>
@@ -401,7 +411,7 @@
     </div>
 
     <!-- Items Table -->
-    <table style="margin-top: 12px;">
+    <table style="margin-top: 14px; margin-bottom: 4px;">
         <thead class="items-header">
             <tr>
                 <th class="center" style="width: 8%;">Partida</th>
@@ -421,7 +431,7 @@
                 <td>
                     {{ item.camera_model.name|default:item.camera_model.model_code }}
                     {% if item.configuration_notes %}
-                    <br><span class="small">{{ item.configuration_notes }}</span>
+                    <br><span class="small">{{ item.configuration_notes|linebreaksbr }}</span>
                     {% endif %}
                     {% if item.discount_percent and item.discount_percent > 0 %}
                     <br><span class="small">Desc.: {{ item.discount_percent|floatformat:1 }}%</span>
@@ -436,7 +446,7 @@
         </tbody>
     </table>
 
-    <!-- Resumen solo productos (sin opcionales; los opcionales van en su tabla abajo) -->
+    <!-- Resumen: productos, descuento, opcionales (si hay), IVA y total -->
     <table class="summary-table">
         <tr>
             <td class="label">Subtotal (productos)</td>
@@ -446,6 +456,12 @@
         <tr>
             <td class="label">Descuento ({{ quote.special_discount_percent|floatformat:1 }}%)</td>
             <td class="value">-${{ quote.special_discount_amount|floatformat:2 }}</td>
+        </tr>
+        {% endif %}
+        {% if quote.get_optional_rows %}
+        <tr>
+            <td class="label">Total (opcionales)</td>
+            <td class="value">${{ quote.get_optional_services_total|floatformat:2 }}</td>
         </tr>
         {% endif %}
         <tr>
@@ -458,15 +474,15 @@
         </tr>
     </table>
 
-    <!-- Zona opcionales: siempre se muestran la tabla y columnas -->
+    <!-- Zona opcionales: solo se muestra si hay opcionales -->
+    {% if quote.get_optional_rows %}
     <div class="optional-zone">
         <div class="section-title">Opcional</div>
         <table style="width: 100%; margin-top: 4px;">
             <thead class="items-header">
                 <tr>
                     <th class="center" style="width: 8%;">Partida</th>
-                    <th style="width: 12%;">No de parte</th>
-                    <th style="width: 40%;">Descripción</th>
+                    <th style="width: 52%;">Descripción</th>
                     <th class="center" style="width: 10%;">Unidad</th>
                     <th class="center" style="width: 10%;">Cantidad</th>
                     <th class="right" style="width: 12%;">Precio Unitario</th>
@@ -474,50 +490,16 @@
                 </tr>
             </thead>
             <tbody class="items-body">
-                {% if quote.cableado or quote.cableado_monto %}
+                {% for row in quote.get_optional_rows %}
                 <tr>
-                    <td class="center">—</td>
-                    <td>—</td>
-                    <td>Cableado</td>
+                    <td class="center">{{ row.partida }}</td>
+                    <td>{{ row.desc }}</td>
                     <td class="center">Serv.</td>
                     <td class="center">1</td>
-                    <td class="right">${{ quote.cableado_monto|floatformat:2 }}</td>
-                    <td class="right">${{ quote.cableado_monto|floatformat:2 }}</td>
+                    <td class="right">${{ row.monto|floatformat:2 }}</td>
+                    <td class="right">${{ row.monto|floatformat:2 }}</td>
                 </tr>
-                {% endif %}
-                {% if quote.instalacion or quote.instalacion_monto %}
-                <tr>
-                    <td class="center">—</td>
-                    <td>—</td>
-                    <td>Instalación</td>
-                    <td class="center">Serv.</td>
-                    <td class="center">1</td>
-                    <td class="right">${{ quote.instalacion_monto|floatformat:2 }}</td>
-                    <td class="right">${{ quote.instalacion_monto|floatformat:2 }}</td>
-                </tr>
-                {% endif %}
-                {% if quote.inyector_poe or quote.inyector_poe_monto %}
-                <tr>
-                    <td class="center">—</td>
-                    <td>—</td>
-                    <td>Inyector PoE</td>
-                    <td class="center">Serv.</td>
-                    <td class="center">1</td>
-                    <td class="right">${{ quote.inyector_poe_monto|floatformat:2 }}</td>
-                    <td class="right">${{ quote.inyector_poe_monto|floatformat:2 }}</td>
-                </tr>
-                {% endif %}
-                {% if quote.poe or quote.poe_monto %}
-                <tr>
-                    <td class="center">—</td>
-                    <td>—</td>
-                    <td>PoE</td>
-                    <td class="center">Serv.</td>
-                    <td class="center">1</td>
-                    <td class="right">${{ quote.poe_monto|floatformat:2 }}</td>
-                    <td class="right">${{ quote.poe_monto|floatformat:2 }}</td>
-                </tr>
-                {% endif %}
+                {% endfor %}
             </tbody>
         </table>
         <table class="optional-total-box">
@@ -527,6 +509,7 @@
             </tr>
         </table>
     </div>
+    {% endif %}
 
     <div class="clear"></div>
 
@@ -540,9 +523,7 @@
         </tr>
         <tr>
             <td class="footer-label">Precios en:</td>
-            <td class="footer-value">Precios fijos. Moneda nacional / USD</td>
-            <td class="footer-label">Forma de Pago:</td>
-            <td class="footer-value">{{ quote.terms|default:"Anticipo 100%" }}</td>
+            <td class="footer-value" colspan="3">Precios fijos. Moneda nacional / USD</td>
         </tr>
         <tr>
             <td class="footer-label">Tiempo de Entrega:</td>
@@ -554,9 +535,9 @@
             <td class="footer-label">Lugar de entrega:</td>
             <td class="footer-value" colspan="3">{{ quote.customer.shipping_address|default:"Tienda" }}</td>
         </tr>
-        <tr>
+        <tr class="footer-observaciones">
             <td class="footer-label">Observaciones</td>
-            <td class="footer-value" colspan="3">{{ quote.notes|default:"-" }}</td>
+            <td class="footer-value" colspan="3">{{ quote.notes|default:"-"|linebreaksbr }}</td>
         </tr>
     </table>
 
