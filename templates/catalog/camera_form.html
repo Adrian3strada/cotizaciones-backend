@@ -2,6 +2,16 @@
 
 {% block title %}Modelo cámara{% endblock %}
 
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'quotes:dashboard' %}">Inicio</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'catalog:list' %}">Catálogo</a></li>
+        <li class="breadcrumb-item active">{% if object %}Editar{% else %}Nuevo modelo{% endif %}</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="content-header">
     <div class="container-fluid">

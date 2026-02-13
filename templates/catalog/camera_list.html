@@ -2,6 +2,15 @@
 
 {% block title %}Catálogo{% endblock %}
 
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'quotes:dashboard' %}">Inicio</a></li>
+        <li class="breadcrumb-item active">Catálogo</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="content-header">
     <div class="container-fluid">
@@ -46,12 +55,20 @@
                             <a class="btn btn-sm btn-outline-primary" href="{% url 'catalog:update' camera.pk %}">Editar</a>
                         {% endif %}
                         {% if perms.catalog.delete_cameramodel %}
-                            <a class="btn btn-sm btn-outline-danger" href="{% url 'catalog:delete' camera.pk %}">Eliminar</a>
+                            <a class="btn btn-sm btn-outline-danger" href="{% url 'catalog:delete' camera.pk %}" data-confirm-message="¿Eliminar el modelo «{{ camera.model_code|escapejs }}»? Esta acción no se puede deshacer.">Eliminar</a>
                         {% endif %}
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="6">Sin modelos.</td></tr>
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <p class="mb-2 text-muted"><i class="fas fa-camera fa-3x"></i></p>
+                        <p class="mb-3">No hay modelos en el catálogo.</p>
+                        {% if perms.catalog.add_cameramodel %}
+                        <a class="btn btn-primary" href="{% url 'catalog:create' %}"><i class="fas fa-plus mr-1"></i> Nuevo modelo</a>
+                        {% endif %}
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>

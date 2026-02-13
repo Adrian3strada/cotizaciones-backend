@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db import models, transaction
-from django.db.models import Count, DecimalField, Sum, Value
+from django.db.models import Count, DecimalField, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.db.models.functions import ExtractMonth
 from django.http import HttpResponse
@@ -168,7 +168,14 @@ class QuoteListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
         sales_user_id = self.request.GET.get("sales_user")
         date_from = parse_date(self.request.GET.get("date_from") or "")
         date_to = parse_date(self.request.GET.get("date_to") or "")
+        search = (self.request.GET.get("q") or "").strip()
 
+        if search:
+            q_filter = (
+                Q(quote_number__icontains=search)
+                | Q(customer__name__icontains=search)
+            )
+            queryset = queryset.filter(q_filter)
         if status:
             queryset = queryset.filter(status=status)
         if customer_id:
@@ -187,6 +194,12 @@ class QuoteListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
             queryset = queryset.filter(issue_date__gte=date_from)
         if date_to:
             queryset = queryset.filter(issue_date__lte=date_to)
+        order_by = self.request.GET.get("order_by", "-issue_date")
+        allowed = {"issue_date", "-issue_date", "quote_number", "-quote_number", "total", "-total", "valid_until", "-valid_until", "customer__name", "-customer__name"}
+        if order_by in allowed:
+            queryset = queryset.order_by(order_by)
+        else:
+            queryset = queryset.order_by("-issue_date")
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -211,6 +224,11 @@ class QuoteListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
         if "page" in q:
             q.pop("page")
         context["filter_query_string"] = q.urlencode()
+        q_no_order = q.copy()
+        q_no_order.pop("order_by", None)
+        context["filter_query_string_no_order"] = q_no_order.urlencode()
+        order_by = self.request.GET.get("order_by", "-issue_date")
+        context["current_order_by"] = order_by
         return context
 
 
@@ -464,7 +482,6 @@ def quote_duplicate(request, pk):
                 quantity=item.quantity,
                 unit_price=item.unit_price,
                 discount_percent=item.discount_percent,
-                configuration_notes=item.configuration_notes or "",
             )
         new_quote.recalculate_totals()
     messages.success(request, "Cotización duplicada. Puedes editarla ahora.")

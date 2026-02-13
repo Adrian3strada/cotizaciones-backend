@@ -2,6 +2,15 @@
 
 {% block title %}Clientes{% endblock %}
 
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'quotes:dashboard' %}">Inicio</a></li>
+        <li class="breadcrumb-item active">Clientes</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="content-header">
     <div class="container-fluid">
@@ -42,7 +51,7 @@
                         </a>
                         {% endif %}
                         {% if perms.customers.delete_customer %}
-                        <a class="btn btn-sm btn-outline-danger" href="{% url 'customers:delete' customer.pk %}">
+                        <a class="btn btn-sm btn-outline-danger" href="{% url 'customers:delete' customer.pk %}" data-confirm-message="¿Eliminar el cliente «{{ customer.name|escapejs }}»? Esta acción no se puede deshacer.">
                             Eliminar
                         </a>
                         {% endif %}
@@ -50,7 +59,13 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="3">Sin clientes.</td>
+                    <td colspan="3" class="text-center py-5">
+                        <p class="mb-2 text-muted"><i class="fas fa-users fa-3x"></i></p>
+                        <p class="mb-3">No hay clientes registrados.</p>
+                        {% if perms.customers.add_customer %}
+                        <a class="btn btn-primary" href="{% url 'customers:create' %}"><i class="fas fa-plus mr-1"></i> Nuevo cliente</a>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

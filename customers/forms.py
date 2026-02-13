@@ -23,7 +23,6 @@ class CustomerContactForm(forms.ModelForm):
             "customer",
             "full_name",
             "email",
-            "phone",
             "mobile",
             "position",
             "is_primary",

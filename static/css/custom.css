@@ -158,7 +158,8 @@ body {
 
 .theme-dark .table td,
 .theme-dark .table th {
-    border-top: 1px solid rgba(86, 127, 175, 0.12);
+    border-color: rgba(86, 127, 175, 0.18) !important;
+    border-top: 1px solid rgba(86, 127, 175, 0.18);
 }
 
 .theme-dark .table-striped tbody tr:nth-of-type(odd) {
@@ -177,6 +178,24 @@ body {
 .theme-dark .btn-outline-primary:hover {
     background-color: rgba(72, 146, 255, 0.2);
     color: #fff;
+}
+
+.theme-dark .btn-primary {
+    border-color: rgba(72, 146, 255, 0.5);
+}
+
+.theme-dark .btn-secondary {
+    border-color: rgba(60, 75, 95, 0.9);
+}
+
+.theme-dark .btn-outline-secondary {
+    border-color: rgba(86, 127, 175, 0.4);
+    color: var(--brand-muted);
+}
+
+.theme-dark .btn-outline-secondary:hover {
+    border-color: rgba(86, 127, 175, 0.6);
+    color: var(--brand-text);
 }
 
 .theme-dark .btn-outline-danger {
@@ -202,6 +221,44 @@ body {
 .theme-dark .btn-secondary {
     background-color: rgba(60, 75, 95, 0.9);
     border-color: rgba(60, 75, 95, 0.9);
+}
+
+.theme-dark .breadcrumb {
+    background: transparent;
+    padding: 0 0 0.5rem 0;
+    margin-bottom: 0;
+    font-size: 0.9rem;
+}
+
+.theme-dark .breadcrumb-item a {
+    color: var(--brand-muted);
+}
+
+.theme-dark .breadcrumb-item.active {
+    color: var(--brand-text);
+}
+
+.theme-dark .modal-content {
+    background: var(--brand-surface);
+    border: 1px solid var(--brand-border);
+    color: var(--brand-text);
+}
+
+.theme-dark .modal-header {
+    border-bottom-color: var(--brand-border);
+}
+
+.theme-dark .modal-footer {
+    border-top-color: var(--brand-border);
+}
+
+.theme-dark .modal .close {
+    color: var(--brand-text);
+    opacity: 0.8;
+}
+
+.theme-dark .modal .close:hover {
+    color: #fff;
 }
 
 .theme-dark .card-footer {
@@ -245,14 +302,24 @@ body {
     box-shadow: 0 0 0 0.15rem rgba(98, 195, 255, 0.25);
 }
 
-/* Quote form – Items table */
+/* Quote form – Items table (bordes acorde al tema oscuro) */
+.quote-items-card .card {
+    border-color: rgba(86, 127, 175, 0.2);
+}
+
 .quote-items-card .card-header {
     flex-wrap: wrap;
     gap: 0.5rem;
+    border-bottom-color: rgba(86, 127, 175, 0.2);
 }
 
 .quote-items-card .table {
     margin-bottom: 0;
+}
+
+.quote-items-card .table thead th,
+.quote-items-card .table tbody td {
+    border-color: rgba(86, 127, 175, 0.2) !important;
 }
 
 .quote-items-card .table thead th {
@@ -261,12 +328,11 @@ body {
     vertical-align: middle;
 }
 
-.quote-items-card .table thead th:nth-child(1) { width: 22%; }   /* Modelo */
-.quote-items-card .table thead th:nth-child(2) { width: 8%; }     /* Cantidad */
-.quote-items-card .table thead th:nth-child(3) { width: 12%; }   /* Precio unitario */
-.quote-items-card .table thead th:nth-child(4) { width: 10%; }   /* Descuento */
-.quote-items-card .table thead th:nth-child(5) { width: 38%; }   /* Notas configuración */
-.quote-items-card .table thead th:nth-child(6) { width: 10%; min-width: 70px; }  /* Eliminar */
+.quote-items-card .table thead th:nth-child(1) { width: 28%; }   /* Modelo */
+.quote-items-card .table thead th:nth-child(2) { width: 10%; }   /* Cantidad */
+.quote-items-card .table thead th:nth-child(3) { width: 18%; }   /* Precio unitario */
+.quote-items-card .table thead th:nth-child(4) { width: 14%; }   /* Descuento */
+.quote-items-card .table thead th:nth-child(5) { width: 12%; min-width: 70px; }  /* Eliminar */
 
 .quote-items-card .table tbody td {
     vertical-align: middle;
@@ -279,6 +345,12 @@ body {
 .quote-items-card .table select.form-control,
 .quote-items-card .table input.form-control {
     min-height: 38px;
+    border-color: rgba(86, 127, 175, 0.25) !important;
+}
+
+.quote-items-card .table select.form-control:focus,
+.quote-items-card .table input.form-control:focus {
+    border-color: rgba(98, 195, 255, 0.5) !important;
 }
 
 .quote-items-card .table textarea.form-control {
@@ -290,8 +362,8 @@ body {
     background-color: rgba(16, 27, 40, 0.95) !important;
     color: var(--brand-muted) !important;
     cursor: not-allowed;
-    border-style: dashed;
-    border-color: rgba(86, 127, 175, 0.25);
+    border-style: solid;
+    border-color: rgba(86, 127, 175, 0.22) !important;
 }
 
 .quote-items-card .input-readonly:focus {

@@ -98,6 +98,7 @@
         <div class="content-wrapper">
             <section class="content pt-3">
                 <div class="container-fluid">
+                    {% block breadcrumbs %}{% endblock %}
                     {% if messages %}
                     {% for message in messages %}
                     <div class="alert alert-info">{{ message }}</div>
@@ -109,6 +110,25 @@
         </div>
     </div>
 
+    <!-- Modal de confirmación (reemplaza alert/confirm del navegador) -->
+    <div class="modal fade" id="appConfirmModal" tabindex="-1" role="dialog" aria-labelledby="appConfirmModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="appConfirmModalTitle">Confirmar</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="appConfirmModalBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="appConfirmModalBtn">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
@@ -117,8 +137,42 @@
             $("input, select, textarea").addClass("form-control");
             $("input[type=checkbox], input[type=radio]").removeClass("form-control").addClass("form-check-input");
             $("input[type=file]").addClass("form-control-file");
+
+            // Modal de confirmación: formularios con data-confirm-message
+            $(document).on("submit", "form[data-confirm-message]", function (e) {
+                e.preventDefault();
+                var form = this;
+                var msg = $(form).data("confirm-message");
+                $("#appConfirmModalTitle").text("Confirmar");
+                $("#appConfirmModalBody").text(msg);
+                $("#appConfirmModal").data("pendingForm", form).modal("show");
+            });
+            $("#appConfirmModalBtn").off("click.confirm").on("click.confirm", function () {
+                var form = $("#appConfirmModal").data("pendingForm");
+                if (form) {
+                    $("#appConfirmModal").data("pendingForm", null).modal("hide");
+                    form.removeAttribute("data-confirm-message");
+                    form.submit();
+                }
+                var href = $("#appConfirmModal").data("pendingHref");
+                if (href) {
+                    $("#appConfirmModal").data("pendingHref", null).modal("hide");
+                    window.location.href = href;
+                }
+            });
+
+            // Modal de confirmación: enlaces con data-confirm-message
+            $(document).on("click", "a[data-confirm-message]", function (e) {
+                e.preventDefault();
+                var msg = $(this).data("confirm-message");
+                var href = $(this).attr("href");
+                $("#appConfirmModalTitle").text("Confirmar");
+                $("#appConfirmModalBody").text(msg);
+                $("#appConfirmModal").data("pendingForm", null).data("pendingHref", href).modal("show");
+            });
         });
     </script>
+    {% block extra_js %}{% endblock %}
 </body>
 
 </html>

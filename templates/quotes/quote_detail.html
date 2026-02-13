@@ -2,6 +2,16 @@
 
 {% block title %}Detalle cotización{% endblock %}
 
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'quotes:dashboard' %}">Inicio</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'quotes:list' %}">Cotizaciones</a></li>
+        <li class="breadcrumb-item active">SCP-{{ object.quote_number|cut:"SCP-"|cut:"COT-" }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="content-header">
     <div class="container-fluid">
@@ -16,17 +26,17 @@
                 <a class="btn btn-outline-secondary" href="{% url 'quotes:duplicate' object.pk %}"><i class="fas fa-copy mr-1"></i> Duplicar</a>
                 {% endif %}
                 {% if object.status == 'DRAFT' %}
-                <form method="post" action="{% url 'quotes:send' object.pk %}" class="d-inline" onsubmit="return confirm('¿Enviar esta cotización al cliente?');">
+                <form method="post" action="{% url 'quotes:send' object.pk %}" class="d-inline" data-confirm-message="¿Enviar esta cotización al cliente?">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-outline-info">Enviar</button>
                 </form>
                 {% endif %}
                 {% if object.status == 'SENT' %}
-                <form method="post" action="{% url 'quotes:mark' object.pk 'ACCEPTED' %}" class="d-inline" onsubmit="return confirm('¿Marcar esta cotización como Aceptada?');">
+                <form method="post" action="{% url 'quotes:mark' object.pk 'ACCEPTED' %}" class="d-inline" data-confirm-message="¿Marcar esta cotización como Aceptada?">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-outline-success">Aceptar</button>
                 </form>
-                <form method="post" action="{% url 'quotes:mark' object.pk 'REJECTED' %}" class="d-inline" onsubmit="return confirm('¿Marcar esta cotización como Rechazada?');">
+                <form method="post" action="{% url 'quotes:mark' object.pk 'REJECTED' %}" class="d-inline" data-confirm-message="¿Marcar esta cotización como Rechazada?">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-outline-danger">Rechazar</button>
                 </form>
@@ -85,7 +95,6 @@
                 <tr>
                     <th>Modelo</th>
                     <th>Cantidad</th>
-                    <th>Notas configuración</th>
                     <th>Precio unit. (fijo)</th>
                     <th>Desc. %</th>
                     <th>Subtotal línea</th>
@@ -96,14 +105,13 @@
                 <tr>
                     <td>{{ item.camera_model }}</td>
                     <td>{{ item.quantity }}</td>
-                    <td>{{ item.configuration_notes|default:"-"|linebreaksbr }}</td>
                     <td>{{ item.unit_price }}</td>
                     <td>{{ item.discount_percent|floatformat:1 }}%</td>
                     <td>{{ item.line_subtotal }}</td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6">Sin items.</td>
+                    <td colspan="5">Sin items.</td>
                 </tr>
                 {% endfor %}
             </tbody>

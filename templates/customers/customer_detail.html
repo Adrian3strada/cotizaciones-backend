@@ -2,6 +2,16 @@
 
 {% block title %}Detalle cliente{% endblock %}
 
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'quotes:dashboard' %}">Inicio</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'customers:list' %}">Clientes</a></li>
+        <li class="breadcrumb-item active">{{ object.name }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="content-header">
     <div class="container-fluid">
@@ -16,7 +26,7 @@
                 </a>
                 {% endif %}
                 {% if perms.customers.delete_customer %}
-                <a class="btn btn-outline-danger" href="{% url 'customers:delete' object.pk %}">
+                <a class="btn btn-outline-danger" href="{% url 'customers:delete' object.pk %}" data-confirm-message="¿Eliminar el cliente «{{ object.name|escapejs }}»? Esta acción no se puede deshacer.">
                     Eliminar cliente
                 </a>
                 {% endif %}

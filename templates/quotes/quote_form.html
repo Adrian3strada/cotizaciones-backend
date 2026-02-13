@@ -2,6 +2,16 @@
 
 {% block title %}Cotización{% endblock %}
 
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'quotes:dashboard' %}">Inicio</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'quotes:list' %}">Cotizaciones</a></li>
+        <li class="breadcrumb-item active">{% if is_edit %}Editar{% else %}Nueva cotización{% endif %}</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="content-header">
     <div class="container-fluid">
@@ -135,7 +145,6 @@
                                 <th>Cantidad</th>
                                 <th>Precio unitario (fijo)</th>
                                 <th>Descuento (%)</th>
-                                <th>Notas configuración</th>
                                 <th>Eliminar</th>
                             </tr>
                         </thead>
@@ -166,12 +175,6 @@
                                     <div class="text-danger">{{ error }}</div>
                                     {% endfor %}
                                 </td>
-                                <td>
-                                    {{ item_form.configuration_notes }}
-                                    {% for error in item_form.configuration_notes.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                    {% endfor %}
-                                </td>
                                 <td class="text-center item-row-actions">
                                     {% if item_form.instance.pk %}
                                     <label class="mb-0 d-inline-flex align-items-center">
@@ -186,7 +189,7 @@
 
                             {% if item_form.non_field_errors %}
                             <tr>
-                                <td colspan="6">{{ item_form.non_field_errors }}</td>
+                                <td colspan="5">{{ item_form.non_field_errors }}</td>
                             </tr>
                             {% endif %}
                             {% endfor %}
@@ -207,7 +210,6 @@
                 <td>{{ formset.empty_form.quantity }}</td>
                 <td>{{ formset.empty_form.unit_price }}</td>
                 <td>{{ formset.empty_form.discount_percent }}</td>
-                <td>{{ formset.empty_form.configuration_notes }}</td>
                 <td class="text-center item-row-actions"><a href="#" class="remove-item-row text-danger">Quitar</a></td>
             </tr>
         </template>

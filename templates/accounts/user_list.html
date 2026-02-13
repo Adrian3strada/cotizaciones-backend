@@ -2,6 +2,15 @@
 
 {% block title %}Usuarios{% endblock %}
 
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'quotes:dashboard' %}">Inicio</a></li>
+        <li class="breadcrumb-item active">Usuarios</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="content-header">
     <div class="container-fluid">
@@ -60,7 +69,8 @@
                         {% endif %}
                         {% if perms.auth.delete_user %}
                         <a class="btn btn-sm btn-outline-danger"
-                            href="{% url 'accounts:delete' user_obj.pk %}">Eliminar</a>
+                            href="{% url 'accounts:delete' user_obj.pk %}"
+                            data-confirm-message="¿Eliminar el usuario «{{ user_obj.username|escapejs }}»? Esta acción no se puede deshacer.">Eliminar</a>
                         {% endif %}
                     </td>
                 </tr>

@@ -74,7 +74,6 @@ class QuoteItemForm(forms.ModelForm):
             "quantity",
             "unit_price",
             "discount_percent",
-            "configuration_notes",
         ]
         widgets = {
             "unit_price": forms.NumberInput(
@@ -89,13 +88,6 @@ class QuoteItemForm(forms.ModelForm):
             ),
             "quantity": forms.NumberInput(
                 attrs={"min": 1, "class": "form-control input-number-narrow"}
-            ),
-            "configuration_notes": forms.Textarea(
-                attrs={
-                    "rows": 2,
-                    "placeholder": "Observaciones o notas para este producto…",
-                    "class": "form-control form-control-sm",
-                }
             ),
         }
 

@@ -2,6 +2,16 @@
 
 {% block title %}Detalle cámara{% endblock %}
 
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'quotes:dashboard' %}">Inicio</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'catalog:list' %}">Catálogo</a></li>
+        <li class="breadcrumb-item active">{{ object.model_code }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="content-header">
     <div class="container-fluid">
@@ -14,7 +24,7 @@
                 <a class="btn btn-outline-primary" href="{% url 'catalog:update' object.pk %}">Editar</a>
                 {% endif %}
                 {% if perms.catalog.delete_cameramodel %}
-                <a class="btn btn-outline-danger" href="{% url 'catalog:delete' object.pk %}">Eliminar</a>
+                <a class="btn btn-outline-danger" href="{% url 'catalog:delete' object.pk %}" data-confirm-message="¿Eliminar el modelo «{{ object.model_code|escapejs }}»? Esta acción no se puede deshacer.">Eliminar</a>
                 {% endif %}
             </div>
         </div>

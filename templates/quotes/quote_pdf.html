@@ -430,9 +430,6 @@
                 <td>{{ item.camera_model.model_code }}</td>
                 <td>
                     {{ item.camera_model.name|default:item.camera_model.model_code }}
-                    {% if item.configuration_notes %}
-                    <br><span class="small">{{ item.configuration_notes|linebreaksbr }}</span>
-                    {% endif %}
                     {% if item.discount_percent and item.discount_percent > 0 %}
                     <br><span class="small">Desc.: {{ item.discount_percent|floatformat:1 }}%</span>
                     {% endif %}
