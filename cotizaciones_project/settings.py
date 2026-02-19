@@ -38,6 +38,8 @@ else:
         "f82067d55692.ngrok-free.app",
         "8e4f3cd87ccf.ngrok-free.app",
         "f20c041eefef.ngrok-free.app",
+        "6b73-187-195-124-21.ngrok-free.app",
+        
     ]
 
 _csrf_trusted_origins_env = os.environ.get("CSRF_TRUSTED_ORIGINS")
@@ -51,6 +53,7 @@ else:
     CSRF_TRUSTED_ORIGINS = [
         "https://f82067d55692.ngrok-free.app",
         "https://f20c041eefef.ngrok-free.app",
+        "https://6b73-187-195-124-21.ngrok-free.app",
     ]
 
 
@@ -171,6 +174,9 @@ LOGOUT_REDIRECT_URL = 'login'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Motor del PDF de cotizaciones: "reportlab" (coordenadas en código) o "weasyprint" (template HTML)
+QUOTE_PDF_ENGINE = os.environ.get("QUOTE_PDF_ENGINE", "reportlab")
+
 # Datos de empresa para el PDF de cotizaciones (personalizables por entorno)
 QUOTE_PDF_COMPANY = {
     "name": os.environ.get("QUOTE_PDF_COMPANY_NAME", "Sistemas de Conteo de Personas."),
@@ -186,3 +192,5 @@ QUOTE_PDF_COMPANY = {
     "rfc": os.environ.get("QUOTE_PDF_COMPANY_RFC", "SCP070410C43"),
     "email": os.environ.get("QUOTE_PDF_COMPANY_EMAIL", "info@sisconper.com"),
 }
+# Nombre para "Autorizado" en el PDF (opcional)
+QUOTE_PDF_AUTHORIZED = os.environ.get("QUOTE_PDF_AUTHORIZED", "")

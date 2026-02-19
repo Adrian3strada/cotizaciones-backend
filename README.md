@@ -77,6 +77,13 @@ Los datos de la empresa en el PDF (nombre, RFC, dirección, teléfono, etc.) se 
 - Aplicar migraciones: `python manage.py migrate`
 - Superusuario: `python manage.py createsuperuser`
 
+## Despliegue en producción
+
+- **ALLOWED_HOSTS**: en `.env` define tu dominio, ej. `ALLOWED_HOSTS=midominio.com,www.midominio.com`
+- **CSRF_TRUSTED_ORIGINS**: si usas HTTPS, añade `CSRF_TRUSTED_ORIGINS=https://midominio.com`
+- **DEBUG**: debe ser `False` en producción (ya está en tu `.env`)
+- **Archivos MEDIA**: con `DEBUG=False`, Django no sirve archivos subidos. Configura tu servidor web (Nginx/Apache) o un CDN para servir la carpeta `media/`.
+
 ## Estructura
 
 Apps:

@@ -494,32 +494,59 @@ def quote_pdf(request, pk):
     from django.conf import settings as django_settings
 
     quote = get_object_or_404(Quote, pk=pk)
-    from weasyprint import HTML
+    if not request.user.is_superuser and quote.sales_user != request.user:
+        messages.error(request, "No tienes permiso para descargar el PDF de esta cotización.")
+        return redirect("quotes:detail", pk=pk)
 
-    logo_path = finders.find("img/logo.png")
-    header_right_path = finders.find("img/quote_header_rigth.png")
-    logo_uri = _build_file_uri(logo_path)
-    header_right_uri = _build_file_uri(header_right_path)
     company = getattr(django_settings, "QUOTE_PDF_COMPANY", {}) or {}
-    pdf_context = {
-        "quote": quote,
-        "company_name": company.get("name", "Sistemas de Conteo de Personas."),
-        "company_website": company.get("website", "www.sisconper.com"),
-        "company_street": company.get(
-            "street", "Blvd. Paseo de la República No. 13020 Int. 1307"
-        ),
-        "company_colony": company.get("colony", "Col. Juriquilla, Querétaro, Qro."),
-        "company_postal_code": company.get("postal_code", "C.P. 76230"),
-        "company_phone": company.get("phone", "(442) 245 7000"),
-        "company_mobile": company.get("mobile", ""),
-        "company_rfc": company.get("rfc", "SCP070410C43"),
-        "company_email": company.get("email", "info@sisconper.com"),
-        "company_logo_uri": logo_uri,
-        "header_right_uri": header_right_uri,
-    }
-    html_string = render_to_string("quotes/quote_pdf.html", pdf_context)
-    pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
-    response = HttpResponse(pdf_file, content_type="application/pdf")
+    vigencia_texto = ""
+    if quote.valid_until and quote.issue_date:
+        dias = (quote.valid_until - quote.issue_date).days
+        vigencia_texto = f"{dias} días"
+    _meses = (
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+    )
+    issue_date_formatted = (
+        f"{quote.issue_date.day} {_meses[quote.issue_date.month - 1]} {quote.issue_date.year}"
+        if quote.issue_date else ""
+    )
+
+    pdf_engine = getattr(django_settings, "QUOTE_PDF_ENGINE", "reportlab")
+    use_reportlab = pdf_engine == "reportlab"
+    if use_reportlab:
+        try:
+            from quotes.pdf_reportlab import build_quote_pdf
+            pdf_bytes = build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted)
+            response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        except ModuleNotFoundError:
+            use_reportlab = False
+    if not use_reportlab:
+        from weasyprint import HTML
+        logo_path = finders.find("img/logo.png")
+        header_right_path = finders.find("img/quote_header_right.png") or finders.find("img/quote_header_rigth.png")
+        logo_uri = _build_file_uri(logo_path)
+        header_right_uri = _build_file_uri(header_right_path)
+        pdf_context = {
+            "quote": quote,
+            "vigencia_texto": vigencia_texto,
+            "issue_date_formatted": issue_date_formatted,
+            "company_name": company.get("name", "Sistemas de Conteo de Personas."),
+            "company_website": company.get("website", "www.sisconper.com"),
+            "company_street": company.get("street", "Blvd. Paseo de la República No. 13020 Int. 1307"),
+            "company_colony": company.get("colony", "Col. Juriquilla, Querétaro, Qro."),
+            "company_postal_code": company.get("postal_code", "C.P. 76230"),
+            "company_phone": company.get("phone", "(442) 245 7000"),
+            "company_mobile": company.get("mobile", ""),
+            "company_rfc": company.get("rfc", "SCP070410C43"),
+            "company_email": company.get("email", "info@sisconper.com"),
+            "company_logo_uri": logo_uri,
+            "header_right_uri": header_right_uri,
+        }
+        html_string = render_to_string("quotes/quote_pdf.html", pdf_context)
+        pdf_bytes = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+
     filename_number = quote.quote_number
     if filename_number.startswith("COT-"):
         filename_number = filename_number.replace("COT-", "SCP-", 1)
