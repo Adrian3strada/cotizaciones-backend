@@ -74,8 +74,16 @@ class QuoteItemForm(forms.ModelForm):
             "quantity",
             "unit_price",
             "discount_percent",
+            "group_name",
+            "order_in_group",
         ]
         widgets = {
+            "group_name": forms.TextInput(
+                attrs={"placeholder": "Ej: Sistema de Conteo de Personas", "class": "form-control"}
+            ),
+            "order_in_group": forms.NumberInput(
+                attrs={"min": 0, "class": "form-control input-number-narrow"}
+            ),
             "unit_price": forms.NumberInput(
                 attrs={
                     "readonly": True,
@@ -95,6 +103,8 @@ class QuoteItemForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["unit_price"].required = False
         self.fields["discount_percent"].required = False
+        self.fields["group_name"].required = False
+        self.fields["order_in_group"].required = False
         if self.instance and self.instance.pk and self.instance.camera_model_id:
             self.fields["unit_price"].initial = self.instance.camera_model.base_price
 

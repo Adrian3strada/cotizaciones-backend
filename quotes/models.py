@@ -293,6 +293,17 @@ class QuoteItem(models.Model):
         "Subtotal línea", max_digits=14, decimal_places=2, default=Decimal("0.00")
     )
     configuration_notes = models.TextField("Notas de configuración", blank=True)
+    group_name = models.CharField(
+        "Grupo",
+        max_length=120,
+        blank=True,
+        help_text="Nombre del grupo (ej: Sistema de Conteo de Personas). Items con el mismo grupo se agrupan en la tabla.",
+    )
+    order_in_group = models.PositiveSmallIntegerField(
+        "Orden en grupo",
+        default=0,
+        help_text="Orden dentro del grupo (0=primero).",
+    )
 
     class Meta:
         verbose_name = "Item de cotización"

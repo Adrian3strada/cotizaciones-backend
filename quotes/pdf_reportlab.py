@@ -8,6 +8,7 @@ from decimal import Decimal
 from io import BytesIO
 import os
 
+from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
@@ -131,8 +132,11 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
     c.setLineWidth(1)
     c.rect(CL_X, Y(CL_Y + CL_H), CL_W + COT_W, CL_H)
     c.line(COT_X, Y(CL_Y + CL_H), COT_X, Y(CL_Y))
-    c.line(CL_X, Y(CL_Y + CL_H - MONEDA_H), CL_X + CL_W + COT_W, Y(CL_Y + CL_H - MONEDA_H))
-    c.line(CL_X + LABEL_W, Y(CL_Y + CL_H), CL_X + LABEL_W, Y(CL_Y + CL_H - MONEDA_H))
+    c.line(CL_X + LABEL_W, Y(CL_Y + CL_H), CL_X + LABEL_W, Y(CL_Y))
+    # Línea de separación: arriba = contenido + Puesto, abajo = e-mail | Moneda
+    BOTTOM_STRIP_H = 18
+    LINE_Y = CL_Y + CL_H - BOTTOM_STRIP_H
+    c.line(CL_X, Y(LINE_Y), CL_X + CL_W + COT_W, Y(LINE_Y))
 
     c.setFont("Helvetica-Bold", 11)
     c.drawString(CL_X, Y(CL_Y - 5), "CLIENTE")
@@ -141,41 +145,41 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
     def _val(txt):
         return _truncate_to_width(c, txt, VAL_MAX_W)
 
-    # --- FRANJA SUPERIOR: e-mail, Puesto | Moneda ---
-    row_top = CL_Y + CL_H - 8
+    # --- FRANJA INFERIOR (debajo de la línea): e-mail | Moneda ---
+    row_bottom = CL_Y + CL_H - 10
     c.setFont("Helvetica", 9)
-    c.drawString(CL_X + 6, Y(row_top), "e-mail:")
+    c.drawString(CL_X + 6, Y(row_bottom), "e-mail:")
     c.setFillColorRGB(0.05, 0.35, 0.85)
-    c.drawString(VAL_X, Y(row_top), _val(contact.email if contact else ""))
+    c.drawString(VAL_X, Y(row_bottom), _val(contact.email if contact else ""))
     c.setFillColorRGB(0, 0, 0)
-    c.drawString(CL_X + 6, Y(row_top - step), "Puesto:")
-    c.drawString(VAL_X, Y(row_top - step), _val(contact.position if contact else ""))
-    c.drawString(COT_X + 8, Y(row_top - step / 2), "Moneda")
-    c.drawString(COT_X + 50, Y(row_top - step / 2), moneda_display)
+    c.drawString(COT_X + 8, Y(row_bottom), "Moneda")
+    c.drawString(COT_X + 50, Y(row_bottom), moneda_display)
 
-    # --- CONTENIDO: Contacto, Tels., C.P., Col., Calle, Web, Empresa ---
-    row_main = CL_Y + CL_H - MONEDA_H - 8
-    c.drawString(CL_X + 6, Y(row_main), "Contacto:")
+    # --- CONTENIDO: Contacto, Tels., C.P., Col., Calle, Web, Empresa, Puesto (arriba de la línea) ---
+    row_start = CL_Y + 10
+    c.drawString(CL_X + 6, Y(row_start), "Contacto:")
     c.setFont("Helvetica-Bold", 9)
-    c.drawString(VAL_X, Y(row_main), _truncate_to_width(c, contact.full_name if contact else "", VAL_MAX_W, font="Helvetica-Bold"))
+    c.drawString(VAL_X, Y(row_start), _truncate_to_width(c, contact.full_name if contact else "", VAL_MAX_W, font="Helvetica-Bold"))
     c.setFont("Helvetica", 9)
-    c.drawString(CL_X + 6, Y(row_main - step), "Tels.")
+    c.drawString(CL_X + 6, Y(row_start + step), "Tels.")
     tels = f"{cust.phone or ''} {cust.mobile or ''}".strip()
-    c.drawString(VAL_X, Y(row_main - step), _val(tels))
-    c.drawString(CL_X + 6, Y(row_main - step * 2), "C.P.")
-    c.drawString(VAL_X, Y(row_main - step * 2), _val(cust.postal_code or ""))
-    c.drawString(CL_X + 6, Y(row_main - step * 3), "Col.")
-    c.drawString(VAL_X, Y(row_main - step * 3), _val(col_text))
-    c.drawString(CL_X + 6, Y(row_main - step * 4), "Calle y No.")
-    c.drawString(VAL_X, Y(row_main - step * 4), _val(cust.street_address or ""))
-    c.drawString(CL_X + 6, Y(row_main - step * 5), "Web:")
+    c.drawString(VAL_X, Y(row_start + step), _val(tels))
+    c.drawString(CL_X + 6, Y(row_start + step * 2), "C.P.")
+    c.drawString(VAL_X, Y(row_start + step * 2), _val(cust.postal_code or ""))
+    c.drawString(CL_X + 6, Y(row_start + step * 3), "Col.")
+    c.drawString(VAL_X, Y(row_start + step * 3), _val(col_text))
+    c.drawString(CL_X + 6, Y(row_start + step * 4), "Calle y No.")
+    c.drawString(VAL_X, Y(row_start + step * 4), _val(cust.street_address or ""))
+    c.drawString(CL_X + 6, Y(row_start + step * 5), "Web:")
     c.setFillColorRGB(0.05, 0.35, 0.85)
-    c.drawString(VAL_X, Y(row_main - step * 5), _truncate_to_width(c, cust.website or "", VAL_MAX_W))
+    c.drawString(VAL_X, Y(row_start + step * 5), _truncate_to_width(c, cust.website or "", VAL_MAX_W))
     c.setFillColorRGB(0, 0, 0)
-    c.drawString(CL_X + 6, Y(row_main - step * 6), "Empresa:")
+    c.drawString(CL_X + 6, Y(row_start + step * 6), "Empresa:")
     c.setFont("Helvetica-Bold", 9)
-    c.drawString(VAL_X, Y(row_main - step * 6), _truncate_to_width(c, cust.name, VAL_MAX_W, font="Helvetica-Bold"))
+    c.drawString(VAL_X, Y(row_start + step * 6), _truncate_to_width(c, cust.name, VAL_MAX_W, font="Helvetica-Bold"))
     c.setFont("Helvetica", 9)
+    c.drawString(CL_X + 6, Y(row_start + step * 7), "Puesto:")
+    c.drawString(VAL_X, Y(row_start + step * 7), _val(contact.position if contact else ""))
 
     # Cuadro COTIZACIÓN: título + nombre de la empresa cotizada
     cot_main = CL_Y + MONEDA_H + 12
@@ -194,53 +198,100 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
     COL_PRICE_RIGHT, COL_TOTAL_RIGHT = 495, PAGE_W - M
     ROW_H = 18
     HEADER_Y = TABLE_TOP
+    HEADER_H = 22
 
+    # Encabezado con fondo teal
+    c.setFillColor(colors.HexColor("#2E7D6E"))
+    c.rect(COL_PARTIDA, Y(HEADER_Y + HEADER_H), PAGE_W - M - COL_PARTIDA, HEADER_H, fill=1, stroke=0)
+    c.setFillColor(colors.white)
     c.setFont("Helvetica-Bold", 9)
-    c.drawString(COL_PARTIDA, Y(HEADER_Y), "Partida")
-    c.drawString(COL_PARTE, Y(HEADER_Y), "No parte")
-    c.drawString(COL_DESC, Y(HEADER_Y), "Descripción")
-    c.drawString(COL_UNIT, Y(HEADER_Y), "Unidad")
-    c.drawString(COL_QTY, Y(HEADER_Y), "Cant.")
-    c.drawString(COL_PRICE_RIGHT - 55, Y(HEADER_Y), "Precio Unit.")
-    c.drawRightString(COL_TOTAL_RIGHT, Y(HEADER_Y), "Total")
+    header_text_y = HEADER_Y + 8
+    c.drawString(COL_PARTIDA + 4, Y(header_text_y), "Partida")
+    c.drawString(COL_PARTE + 4, Y(header_text_y), "No de parte")
+    c.drawString(COL_DESC + 4, Y(header_text_y), "Descripción")
+    c.drawString(COL_UNIT + 4, Y(header_text_y), "Unidad")
+    c.drawString(COL_QTY + 4, Y(header_text_y), "Cantidad")
+    c.drawString(COL_PRICE_RIGHT - 55, Y(header_text_y), "Precio Unit.")
+    c.drawRightString(COL_TOTAL_RIGHT - 4, Y(header_text_y), "Total")
+    c.setFillColor(colors.black)
 
-    c.setLineWidth(0.5)
-    c.line(COL_PARTIDA, Y(HEADER_Y - 2), PAGE_W - M, Y(HEADER_Y - 2))
-
+    # Agrupar items por group_name
     items = list(quote.items.select_related("camera_model").order_by("id"))
-    optional_rows = quote.get_optional_rows()
-    y_row = HEADER_Y + ROW_H
-    partida = 1
-
+    groups = []
+    current_group = None
     for item in items:
-        cam = item.camera_model
-        desc = cam.name or cam.model_code
-        unidad = "Pza." if "cámara" in desc.lower() or "camera" in desc.lower() else "Serv."
-        c.setFont("Helvetica", 9)
-        c.drawString(COL_PARTIDA, Y(y_row), str(partida))
-        c.drawString(COL_PARTE, Y(y_row), _truncate(cam.model_code, 12))
-        c.drawString(COL_DESC, Y(y_row), _truncate(desc, 42))
-        c.drawString(COL_UNIT, Y(y_row), unidad)
-        c.drawString(COL_QTY, Y(y_row), str(item.quantity))
-        c.drawRightString(COL_PRICE_RIGHT, Y(y_row), _fmt_money(item.unit_price))
-        c.drawRightString(COL_TOTAL_RIGHT, Y(y_row), _fmt_money(item.line_subtotal))
-        y_row += ROW_H
-        partida += 1
+        gn = (item.group_name or "").strip()
+        if gn:
+            if current_group is None or current_group[0] != gn:
+                current_group = [gn, []]
+                groups.append(current_group)
+            current_group[1].append(item)
+        else:
+            current_group = None
+            groups.append([None, [item]])
+
+    optional_rows = quote.get_optional_rows()
+    y_row = HEADER_Y + HEADER_H + ROW_H
+    partida = 1
+    c.setLineWidth(0.5)
+
+    for group_name, group_items in groups:
+        if group_name:
+            # Fila de grupo (sin línea debajo)
+            c.setFont("Helvetica-Bold", 9)
+            c.drawString(COL_PARTIDA + 4, Y(y_row), str(partida))
+            c.drawString(COL_DESC + 4, Y(y_row), _truncate(group_name, 50))
+            y_row += ROW_H
+            # Sub-items
+            for i, item in enumerate(sorted(group_items, key=lambda x: (x.order_in_group, x.id))):
+                cam = item.camera_model
+                desc = cam.name or cam.model_code
+                unidad = "Pza." if "cámara" in desc.lower() or "camera" in desc.lower() else "Serv."
+                sub_partida = f"{partida}.{i + 1}"
+                c.setFont("Helvetica", 9)
+                c.drawString(COL_PARTIDA + 4, Y(y_row), sub_partida)
+                c.drawString(COL_PARTE + 4, Y(y_row), _truncate(cam.model_code, 12))
+                c.drawString(COL_DESC + 4, Y(y_row), _truncate(desc, 42))
+                c.drawString(COL_UNIT + 4, Y(y_row), unidad)
+                c.drawString(COL_QTY + 4, Y(y_row), str(item.quantity))
+                c.drawRightString(COL_PRICE_RIGHT, Y(y_row), _fmt_money(item.unit_price))
+                c.drawRightString(COL_TOTAL_RIGHT, Y(y_row), _fmt_money(item.line_subtotal))
+                y_row += ROW_H
+                if i < len(group_items) - 1:
+                    c.line(COL_PARTIDA, Y(y_row - 2), PAGE_W - M, Y(y_row - 2))
+            partida += 1
+        else:
+            # Items sin grupo (filas planas)
+            for item in group_items:
+                cam = item.camera_model
+                desc = cam.name or cam.model_code
+                unidad = "Pza." if "cámara" in desc.lower() or "camera" in desc.lower() else "Serv."
+                c.setFont("Helvetica", 9)
+                c.drawString(COL_PARTIDA + 4, Y(y_row), str(partida))
+                c.drawString(COL_PARTE + 4, Y(y_row), _truncate(cam.model_code, 12))
+                c.drawString(COL_DESC + 4, Y(y_row), _truncate(desc, 42))
+                c.drawString(COL_UNIT + 4, Y(y_row), unidad)
+                c.drawString(COL_QTY + 4, Y(y_row), str(item.quantity))
+                c.drawRightString(COL_PRICE_RIGHT, Y(y_row), _fmt_money(item.unit_price))
+                c.drawRightString(COL_TOTAL_RIGHT, Y(y_row), _fmt_money(item.line_subtotal))
+                y_row += ROW_H
+                partida += 1
 
     disc = quote.special_discount_amount or Decimal("0")
     if disc != 0:
         pct = quote.special_discount_percent or 0
-        c.drawString(COL_PARTIDA, Y(y_row), "Desc.")
-        c.drawString(COL_DESC, Y(y_row), f"{pct}%")
+        c.setFont("Helvetica", 9)
+        c.drawString(COL_PARTIDA + 4, Y(y_row), "Desc.")
+        c.drawString(COL_DESC + 4, Y(y_row), f"{pct}%")
         c.drawRightString(COL_TOTAL_RIGHT, Y(y_row), f"-{_fmt_money(disc)}")
         y_row += ROW_H
 
     for opt in optional_rows:
-        c.drawString(COL_PARTIDA, Y(y_row), str(opt.get("partida", partida)))
-        c.drawString(COL_PARTE, Y(y_row), "—")
-        c.drawString(COL_DESC, Y(y_row), _truncate(opt.get("desc", ""), 42))
-        c.drawString(COL_UNIT, Y(y_row), "Serv.")
-        c.drawString(COL_QTY, Y(y_row), "1")
+        c.drawString(COL_PARTIDA + 4, Y(y_row), str(opt.get("partida", partida)))
+        c.drawString(COL_PARTE + 4, Y(y_row), "—")
+        c.drawString(COL_DESC + 4, Y(y_row), _truncate(opt.get("desc", ""), 42))
+        c.drawString(COL_UNIT + 4, Y(y_row), "Serv.")
+        c.drawString(COL_QTY + 4, Y(y_row), "1")
         c.drawRightString(COL_PRICE_RIGHT, Y(y_row), _fmt_money(opt.get("monto")))
         c.drawRightString(COL_TOTAL_RIGHT, Y(y_row), _fmt_money(opt.get("monto")))
         y_row += ROW_H

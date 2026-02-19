@@ -145,6 +145,8 @@
                                 <th>Cantidad</th>
                                 <th>Precio unitario (fijo)</th>
                                 <th>Descuento (%)</th>
+                                <th>Grupo</th>
+                                <th>Orden</th>
                                 <th>Eliminar</th>
                             </tr>
                         </thead>
@@ -175,6 +177,18 @@
                                     <div class="text-danger">{{ error }}</div>
                                     {% endfor %}
                                 </td>
+                                <td>
+                                    {{ item_form.group_name }}
+                                    {% for error in item_form.group_name.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {{ item_form.order_in_group }}
+                                    {% for error in item_form.order_in_group.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </td>
                                 <td class="text-center item-row-actions">
                                     {% if item_form.instance.pk %}
                                     <label class="mb-0 d-inline-flex align-items-center">
@@ -189,7 +203,7 @@
 
                             {% if item_form.non_field_errors %}
                             <tr>
-                                <td colspan="5">{{ item_form.non_field_errors }}</td>
+                                <td colspan="7">{{ item_form.non_field_errors }}</td>
                             </tr>
                             {% endif %}
                             {% endfor %}
@@ -210,6 +224,8 @@
                 <td>{{ formset.empty_form.quantity }}</td>
                 <td>{{ formset.empty_form.unit_price }}</td>
                 <td>{{ formset.empty_form.discount_percent }}</td>
+                <td>{{ formset.empty_form.group_name }}</td>
+                <td>{{ formset.empty_form.order_in_group }}</td>
                 <td class="text-center item-row-actions"><a href="#" class="remove-item-row text-danger">Quitar</a></td>
             </tr>
         </template>
