@@ -192,27 +192,38 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
     # Imagen en esquina superior derecha del cuadro COTIZACIÓN (donde está la X)
     _img(c, hero_path, COT_X + COT_W - 68, Y(CL_Y + 6), 62, 62)
 
-    # ==================== TABLA ====================
+    # ==================== TABLA (ampliada, con líneas verticales) ====================
     TABLE_TOP = 255
-    COL_PARTIDA, COL_PARTE, COL_DESC, COL_UNIT, COL_QTY = M, 90, 155, 335, 395
-    COL_PRICE_RIGHT, COL_TOTAL_RIGHT = 495, PAGE_W - M
-    ROW_H = 18
+    TABLE_LEFT = 40
+    TABLE_RIGHT = PAGE_W - 30  # margen derecho 30 para ganar 10 pts
+    # Bordes: Unidad(44), Cantidad(54), Desc(200) para que no se corte el texto
+    COL_PARTIDA = TABLE_LEFT
+    COL_PARTE = 78
+    COL_DESC = 138
+    COL_UNIT = 338
+    COL_QTY = 382
+    COL_PRICE_LEFT = 436
+    COL_TOTAL_LEFT = 492
+    COL_TOTAL_RIGHT = TABLE_RIGHT
+    ROW_H = 24
     HEADER_Y = TABLE_TOP
-    HEADER_H = 22
+    HEADER_H = 24
+    pad = 6
 
-    # Encabezado con fondo teal
+    # Encabezado con fondo teal (truncar si no cabe para evitar solapamientos)
     c.setFillColor(colors.HexColor("#2E7D6E"))
-    c.rect(COL_PARTIDA, Y(HEADER_Y + HEADER_H), PAGE_W - M - COL_PARTIDA, HEADER_H, fill=1, stroke=0)
+    c.rect(COL_PARTIDA, Y(HEADER_Y + HEADER_H), TABLE_RIGHT - COL_PARTIDA, HEADER_H, fill=1, stroke=0)
     c.setFillColor(colors.white)
     c.setFont("Helvetica-Bold", 9)
-    header_text_y = HEADER_Y + 8
-    c.drawString(COL_PARTIDA + 4, Y(header_text_y), "Partida")
-    c.drawString(COL_PARTE + 4, Y(header_text_y), "No de parte")
-    c.drawString(COL_DESC + 4, Y(header_text_y), "Descripción")
-    c.drawString(COL_UNIT + 4, Y(header_text_y), "Unidad")
-    c.drawString(COL_QTY + 4, Y(header_text_y), "Cantidad")
-    c.drawString(COL_PRICE_RIGHT - 55, Y(header_text_y), "Precio Unit.")
-    c.drawRightString(COL_TOTAL_RIGHT - 4, Y(header_text_y), "Total")
+    header_text_y = HEADER_Y + 10
+    pad = 6
+    c.drawString(COL_PARTIDA + pad, Y(header_text_y), _truncate_to_width(c, "Partida", COL_PARTE - COL_PARTIDA - pad, font="Helvetica-Bold"))
+    c.drawString(COL_PARTE + pad, Y(header_text_y), _truncate_to_width(c, "No de parte", COL_DESC - COL_PARTE - pad, font="Helvetica-Bold"))
+    c.drawString(COL_DESC + pad, Y(header_text_y), _truncate_to_width(c, "Descripción", COL_UNIT - COL_DESC - pad, font="Helvetica-Bold"))
+    c.drawString(COL_UNIT + pad, Y(header_text_y), _truncate_to_width(c, "Unidad", COL_QTY - COL_UNIT - pad, font="Helvetica-Bold"))
+    c.drawString(COL_QTY + pad, Y(header_text_y), _truncate_to_width(c, "Cantidad", COL_PRICE_LEFT - COL_QTY - pad, font="Helvetica-Bold"))
+    c.drawString(COL_PRICE_LEFT + pad, Y(header_text_y), _truncate_to_width(c, "Precio Unit.", COL_TOTAL_LEFT - COL_PRICE_LEFT - pad, font="Helvetica-Bold"))
+    c.drawRightString(COL_TOTAL_RIGHT - pad, Y(header_text_y), _truncate_to_width(c, "Total", COL_TOTAL_RIGHT - COL_TOTAL_LEFT - pad, font="Helvetica-Bold"))
     c.setFillColor(colors.black)
 
     # Agrupar items por group_name
@@ -234,31 +245,35 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
     y_row = HEADER_Y + HEADER_H + ROW_H
     partida = 1
     c.setLineWidth(0.5)
+    W_PARTIDA = COL_PARTE - COL_PARTIDA - pad
+    W_PARTE = COL_DESC - COL_PARTE - pad
+    W_DESC = COL_UNIT - COL_DESC - pad
+    W_UNIT = COL_QTY - COL_UNIT - pad
+    W_QTY = COL_PRICE_LEFT - COL_QTY - pad
+    W_PRICE = COL_TOTAL_LEFT - COL_PRICE_LEFT - pad
+    W_TOTAL = COL_TOTAL_RIGHT - COL_TOTAL_LEFT - pad
 
     for group_name, group_items in groups:
         if group_name:
             # Fila de grupo (sin línea debajo)
             c.setFont("Helvetica-Bold", 9)
-            c.drawString(COL_PARTIDA + 4, Y(y_row), str(partida))
-            c.drawString(COL_DESC + 4, Y(y_row), _truncate(group_name, 50))
+            c.drawString(COL_PARTIDA + pad, Y(y_row), _truncate_to_width(c, str(partida), W_PARTIDA))
+            c.drawString(COL_DESC + pad, Y(y_row), _truncate_to_width(c, group_name, W_DESC))
             y_row += ROW_H
-            # Sub-items
             for i, item in enumerate(sorted(group_items, key=lambda x: (x.order_in_group, x.id))):
                 cam = item.camera_model
                 desc = cam.name or cam.model_code
                 unidad = "Pza." if "cámara" in desc.lower() or "camera" in desc.lower() else "Serv."
                 sub_partida = f"{partida}.{i + 1}"
                 c.setFont("Helvetica", 9)
-                c.drawString(COL_PARTIDA + 4, Y(y_row), sub_partida)
-                c.drawString(COL_PARTE + 4, Y(y_row), _truncate(cam.model_code, 12))
-                c.drawString(COL_DESC + 4, Y(y_row), _truncate(desc, 42))
-                c.drawString(COL_UNIT + 4, Y(y_row), unidad)
-                c.drawString(COL_QTY + 4, Y(y_row), str(item.quantity))
-                c.drawRightString(COL_PRICE_RIGHT, Y(y_row), _fmt_money(item.unit_price))
-                c.drawRightString(COL_TOTAL_RIGHT, Y(y_row), _fmt_money(item.line_subtotal))
+                c.drawString(COL_PARTIDA + pad, Y(y_row), _truncate_to_width(c, sub_partida, W_PARTIDA))
+                c.drawString(COL_PARTE + pad, Y(y_row), _truncate_to_width(c, cam.model_code, W_PARTE))
+                c.drawString(COL_DESC + pad, Y(y_row), _truncate_to_width(c, desc, W_DESC))
+                c.drawString(COL_UNIT + pad, Y(y_row), _truncate_to_width(c, unidad, W_UNIT))
+                c.drawString(COL_QTY + pad, Y(y_row), _truncate_to_width(c, str(item.quantity), W_QTY))
+                c.drawRightString(COL_TOTAL_LEFT - pad, Y(y_row), _truncate_to_width(c, _fmt_money(item.unit_price), W_PRICE))
+                c.drawRightString(COL_TOTAL_RIGHT - pad, Y(y_row), _truncate_to_width(c, _fmt_money(item.line_subtotal), W_TOTAL))
                 y_row += ROW_H
-                if i < len(group_items) - 1:
-                    c.line(COL_PARTIDA, Y(y_row - 2), PAGE_W - M, Y(y_row - 2))
             partida += 1
         else:
             # Items sin grupo (filas planas)
@@ -267,13 +282,13 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
                 desc = cam.name or cam.model_code
                 unidad = "Pza." if "cámara" in desc.lower() or "camera" in desc.lower() else "Serv."
                 c.setFont("Helvetica", 9)
-                c.drawString(COL_PARTIDA + 4, Y(y_row), str(partida))
-                c.drawString(COL_PARTE + 4, Y(y_row), _truncate(cam.model_code, 12))
-                c.drawString(COL_DESC + 4, Y(y_row), _truncate(desc, 42))
-                c.drawString(COL_UNIT + 4, Y(y_row), unidad)
-                c.drawString(COL_QTY + 4, Y(y_row), str(item.quantity))
-                c.drawRightString(COL_PRICE_RIGHT, Y(y_row), _fmt_money(item.unit_price))
-                c.drawRightString(COL_TOTAL_RIGHT, Y(y_row), _fmt_money(item.line_subtotal))
+                c.drawString(COL_PARTIDA + pad, Y(y_row), _truncate_to_width(c, str(partida), W_PARTIDA))
+                c.drawString(COL_PARTE + pad, Y(y_row), _truncate_to_width(c, cam.model_code, W_PARTE))
+                c.drawString(COL_DESC + pad, Y(y_row), _truncate_to_width(c, desc, W_DESC))
+                c.drawString(COL_UNIT + pad, Y(y_row), _truncate_to_width(c, unidad, W_UNIT))
+                c.drawString(COL_QTY + pad, Y(y_row), _truncate_to_width(c, str(item.quantity), W_QTY))
+                c.drawRightString(COL_TOTAL_LEFT - pad, Y(y_row), _truncate_to_width(c, _fmt_money(item.unit_price), W_PRICE))
+                c.drawRightString(COL_TOTAL_RIGHT - pad, Y(y_row), _truncate_to_width(c, _fmt_money(item.line_subtotal), W_TOTAL))
                 y_row += ROW_H
                 partida += 1
 
@@ -281,25 +296,33 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
     if disc != 0:
         pct = quote.special_discount_percent or 0
         c.setFont("Helvetica", 9)
-        c.drawString(COL_PARTIDA + 4, Y(y_row), "Desc.")
-        c.drawString(COL_DESC + 4, Y(y_row), f"{pct}%")
-        c.drawRightString(COL_TOTAL_RIGHT, Y(y_row), f"-{_fmt_money(disc)}")
+        c.drawString(COL_PARTIDA + pad, Y(y_row), "Desc.")
+        c.drawString(COL_DESC + pad, Y(y_row), _truncate_to_width(c, f"{pct}%", W_DESC))
+        c.drawRightString(COL_TOTAL_RIGHT - pad, Y(y_row), _truncate_to_width(c, f"-{_fmt_money(disc)}", W_TOTAL))
         y_row += ROW_H
 
     for opt in optional_rows:
-        c.drawString(COL_PARTIDA + 4, Y(y_row), str(opt.get("partida", partida)))
-        c.drawString(COL_PARTE + 4, Y(y_row), "—")
-        c.drawString(COL_DESC + 4, Y(y_row), _truncate(opt.get("desc", ""), 42))
-        c.drawString(COL_UNIT + 4, Y(y_row), "Serv.")
-        c.drawString(COL_QTY + 4, Y(y_row), "1")
-        c.drawRightString(COL_PRICE_RIGHT, Y(y_row), _fmt_money(opt.get("monto")))
-        c.drawRightString(COL_TOTAL_RIGHT, Y(y_row), _fmt_money(opt.get("monto")))
+        c.drawString(COL_PARTIDA + pad, Y(y_row), _truncate_to_width(c, str(opt.get("partida", partida)), W_PARTIDA))
+        c.drawString(COL_PARTE + pad, Y(y_row), _truncate_to_width(c, "—", W_PARTE))
+        c.drawString(COL_DESC + pad, Y(y_row), _truncate_to_width(c, opt.get("desc", ""), W_DESC))
+        c.drawString(COL_UNIT + pad, Y(y_row), _truncate_to_width(c, "Serv.", W_UNIT))
+        c.drawString(COL_QTY + pad, Y(y_row), _truncate_to_width(c, "1", W_QTY))
+        c.drawRightString(COL_TOTAL_LEFT - pad, Y(y_row), _truncate_to_width(c, _fmt_money(opt.get("monto")), W_PRICE))
+        c.drawRightString(COL_TOTAL_RIGHT - pad, Y(y_row), _truncate_to_width(c, _fmt_money(opt.get("monto")), W_TOTAL))
         y_row += ROW_H
 
     c.setFont("Helvetica-Bold", 10)
-    c.drawString(COL_UNIT, Y(y_row + 6), "Total")
-    c.drawRightString(COL_TOTAL_RIGHT, Y(y_row + 6), _fmt_money(quote.total) + " " + moneda_display)
-    y_row += ROW_H + 12
+    c.drawString(COL_UNIT + pad, Y(y_row + 8), _truncate_to_width(c, "Total", W_UNIT))
+    c.drawRightString(COL_TOTAL_RIGHT - pad, Y(y_row + 8), _truncate_to_width(c, _fmt_money(quote.total) + " " + moneda_display, W_TOTAL))
+    table_bottom_y = y_row + ROW_H + 16
+    y_row = table_bottom_y
+
+    # Líneas verticales de separación entre columnas + bordes de tabla
+    c.setLineWidth(0.5)
+    tbl_bottom = Y(table_bottom_y)
+    tbl_top = Y(HEADER_Y + HEADER_H)
+    for col_x in (COL_PARTIDA, COL_PARTE, COL_DESC, COL_UNIT, COL_QTY, COL_PRICE_LEFT, COL_TOTAL_LEFT, COL_TOTAL_RIGHT):
+        c.line(col_x, tbl_bottom, col_x, tbl_top)
 
     # ==================== PIE ====================
     FOOTER_Y = 680  # desde arriba; debe caber en página 842
