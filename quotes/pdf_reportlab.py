@@ -31,7 +31,7 @@ def _truncate(s, max_len=45):
     return s[:max_len] + "…" if len(s) > max_len else s
 
 
-def _truncate_to_width(c, s, max_width, font="Helvetica", size=9):
+def _truncate_to_width(c, s, max_width, font="Helvetica", size=7):
     """Trunca el texto para que quepa en max_width pts."""
     s = str(s) if s else ""
     if not s:
@@ -45,11 +45,53 @@ def _truncate_to_width(c, s, max_width, font="Helvetica", size=9):
     return s[: len(s) - 1] + ellipsis if len(s) > 1 else ellipsis
 
 
+def _wrap_to_lines(c, s, max_width, font="Helvetica", size=7, max_lines=4):
+    """Divide el texto en líneas que quepan en max_width pts."""
+    s = str(s) if s else ""
+    if not s:
+        return []
+    c.setFont(font, size)
+    words = s.split()
+    lines = []
+    current = ""
+    for w in words:
+        test = (current + " " + w).strip() if current else w
+        if c.stringWidth(test) <= max_width:
+            current = test
+        else:
+            if current:
+                lines.append(current)
+            current = w if c.stringWidth(w) <= max_width else _truncate_to_width(c, w, max_width)
+    if current:
+        lines.append(current)
+    return lines[:max_lines]
+
+
 def _fmt_money(val):
     if val is None:
         return "$0.00"
     v = Decimal(str(val))
     return f"${v:,.2f}"
+
+
+def _parse_terms(terms_text):
+    """Extrae Forma de Pago, Tiempo de Entrega, Garantía, Lugar de quote.terms."""
+    result = {"payment": "", "delivery": "", "warranty": "", "place": ""}
+    if not terms_text or not str(terms_text).strip():
+        return result
+    text = str(terms_text).strip()
+    parts = [p.strip() for p in text.replace(".", ";").split(";") if p.strip()]
+    for p in parts:
+        lower = p.lower()
+        if lower.startswith("pago") or "anticipo" in lower:
+            result["payment"] = p
+        elif lower.startswith("entrega") and "lugar" not in lower:
+            result["delivery"] = p
+        elif "garantía" in lower or "garantia" in lower:
+            result["warranty"] = p
+        elif "lugar" in lower:
+            result["place"] = p
+    return result
 
 
 def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
@@ -68,6 +110,7 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
 
     buf = BytesIO()
     c = canvas.Canvas(buf, pagesize=(PAGE_W, PAGE_H))
+    c.setTitle(f"Cotización {quote.quote_number}")
 
     cust = quote.customer
     contact = quote.contact
@@ -81,21 +124,21 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
     # Logo izq
     _img(c, logo_path, M, Y(95), LW, 55)
 
-    # Texto empresa (centro-arriba, como referencia)
+    # Texto empresa (centro-arriba)
     INFO_X = 195
-    c.setFont("Helvetica-Bold", 10)
+    c.setFont("Helvetica-Bold", 8)
     c.drawString(INFO_X, Y(58), company.get("name", "Sistemas de Conteo de Personas."))
-    c.setFont("Helvetica", 9)
+    c.setFont("Helvetica", 7)
     c.drawString(INFO_X, Y(68), company.get("street", "Blvd. Paseo de la República No. 13020 Int. 1307"))
     c.drawString(INFO_X, Y(78), f"{company.get('colony', '')} {company.get('postal_code', '')}".strip())
     c.drawString(INFO_X, Y(88), f"Tel: {company.get('phone', '')}")
     c.drawString(INFO_X, Y(98), f"RFC: {company.get('rfc', '')}")
     c.drawString(INFO_X, Y(108), f"e-mail: {company.get('email', '')}")
-    c.setFont("Helvetica-Bold", 9)
+    c.setFont("Helvetica-Bold", 7)
     c.drawString(INFO_X, Y(118), company.get("website", "www.sisconper.com"))
 
-# Caja Número / Fecha / Vigencia (pequeña)
-    BOX_X, BOX_Y, BOX_W, BOX_H = M, 120, 135, 40
+# Caja Número / Fecha / Vigencia (alineada con cuadro CLIENTE)
+    BOX_X, BOX_Y, BOX_W, BOX_H = M, 135, 135, 40
     c.setLineWidth(2)
     c.rect(BOX_X, Y(BOX_Y + BOX_H), BOX_W, BOX_H)
 
@@ -109,14 +152,14 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
     y_vig = y_fecha + line_gap
 
     # Etiquetas
-    c.setFont("Helvetica-Bold", 9)   # <-- reduce fuente también
+    c.setFont("Helvetica-Bold", 7)
     c.drawString(BOX_X + pad_x, Y(y_num), "Número:")
     c.drawString(BOX_X + pad_x, Y(y_fecha), "Fecha:")
     c.drawString(BOX_X + pad_x, Y(y_vig), "Vigencia:")
 
     # Valores
-    c.setFont("Helvetica", 9)
-    value_x = BOX_X + 55  # <-- ajusta donde empiezan los valores (según ancho)
+    c.setFont("Helvetica", 7)
+    value_x = BOX_X + 55
     c.drawString(value_x, Y(y_num), quote.quote_number)
     c.drawString(value_x, Y(y_fecha), issue_date_formatted)
     c.drawString(value_x, Y(y_vig), vigencia_texto)
@@ -138,16 +181,16 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
     LINE_Y = CL_Y + CL_H - BOTTOM_STRIP_H
     c.line(CL_X, Y(LINE_Y), CL_X + CL_W + COT_W, Y(LINE_Y))
 
-    c.setFont("Helvetica-Bold", 11)
+    c.setFont("Helvetica-Bold", 9)
     c.drawString(CL_X, Y(CL_Y - 5), "CLIENTE")
 
-    step = 10
+    step = 7
     def _val(txt):
         return _truncate_to_width(c, txt, VAL_MAX_W)
 
     # --- FRANJA INFERIOR (debajo de la línea): e-mail | Moneda ---
     row_bottom = CL_Y + CL_H - 10
-    c.setFont("Helvetica", 9)
+    c.setFont("Helvetica", 7)
     c.drawString(CL_X + 6, Y(row_bottom), "e-mail:")
     c.setFillColorRGB(0.05, 0.35, 0.85)
     c.drawString(VAL_X, Y(row_bottom), _val(contact.email if contact else ""))
@@ -155,42 +198,42 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
     c.drawString(COT_X + 8, Y(row_bottom), "Moneda")
     c.drawString(COT_X + 50, Y(row_bottom), moneda_display)
 
-    # --- CONTENIDO: Contacto, Tels., C.P., Col., Calle, Web, Empresa, Puesto (arriba de la línea) ---
+    # --- CONTENIDO: Empresa, Web, Calle, Col., C.P., Tels., Celular, Contacto, Puesto (orden como referencia) ---
     row_start = CL_Y + 10
-    c.drawString(CL_X + 6, Y(row_start), "Contacto:")
-    c.setFont("Helvetica-Bold", 9)
-    c.drawString(VAL_X, Y(row_start), _truncate_to_width(c, contact.full_name if contact else "", VAL_MAX_W, font="Helvetica-Bold"))
-    c.setFont("Helvetica", 9)
-    c.drawString(CL_X + 6, Y(row_start + step), "Tels.")
-    tels = f"{cust.phone or ''} {cust.mobile or ''}".strip()
-    c.drawString(VAL_X, Y(row_start + step), _val(tels))
-    c.drawString(CL_X + 6, Y(row_start + step * 2), "C.P.")
-    c.drawString(VAL_X, Y(row_start + step * 2), _val(cust.postal_code or ""))
+    c.setFont("Helvetica", 7)
+    c.drawString(CL_X + 6, Y(row_start), "Empresa:")
+    c.setFont("Helvetica-Bold", 7)
+    c.drawString(VAL_X, Y(row_start), _truncate_to_width(c, cust.name, VAL_MAX_W, font="Helvetica-Bold", size=7))
+    c.setFont("Helvetica", 7)
+    c.drawString(CL_X + 6, Y(row_start + step), "Web:")
+    c.setFillColorRGB(0.05, 0.35, 0.85)
+    c.drawString(VAL_X, Y(row_start + step), _truncate_to_width(c, cust.website or "", VAL_MAX_W, size=7))
+    c.setFillColorRGB(0, 0, 0)
+    c.drawString(CL_X + 6, Y(row_start + step * 2), "Calle y No.")
+    c.drawString(VAL_X, Y(row_start + step * 2), _val(cust.street_address or ""))
     c.drawString(CL_X + 6, Y(row_start + step * 3), "Col.")
     c.drawString(VAL_X, Y(row_start + step * 3), _val(col_text))
-    c.drawString(CL_X + 6, Y(row_start + step * 4), "Calle y No.")
-    c.drawString(VAL_X, Y(row_start + step * 4), _val(cust.street_address or ""))
-    c.drawString(CL_X + 6, Y(row_start + step * 5), "Web:")
-    c.setFillColorRGB(0.05, 0.35, 0.85)
-    c.drawString(VAL_X, Y(row_start + step * 5), _truncate_to_width(c, cust.website or "", VAL_MAX_W))
-    c.setFillColorRGB(0, 0, 0)
-    c.drawString(CL_X + 6, Y(row_start + step * 6), "Empresa:")
-    c.setFont("Helvetica-Bold", 9)
-    c.drawString(VAL_X, Y(row_start + step * 6), _truncate_to_width(c, cust.name, VAL_MAX_W, font="Helvetica-Bold"))
-    c.setFont("Helvetica", 9)
-    c.drawString(CL_X + 6, Y(row_start + step * 7), "Puesto:")
-    c.drawString(VAL_X, Y(row_start + step * 7), _val(contact.position if contact else ""))
+    c.drawString(CL_X + 6, Y(row_start + step * 4), "C.P.")
+    c.drawString(VAL_X, Y(row_start + step * 4), _val(cust.postal_code or ""))
+    c.drawString(CL_X + 6, Y(row_start + step * 5), "Tels.")
+    c.drawString(VAL_X, Y(row_start + step * 5), _val(cust.phone or ""))
+    c.drawString(CL_X + 6, Y(row_start + step * 6), "Celular")
+    c.drawString(VAL_X, Y(row_start + step * 6), _val(cust.mobile or ""))
+    c.drawString(CL_X + 6, Y(row_start + step * 7), "Contacto:")
+    c.drawString(VAL_X, Y(row_start + step * 7), _val(contact.full_name if contact else ""))
+    c.drawString(CL_X + 6, Y(row_start + step * 8), "Puesto:")
+    c.drawString(VAL_X, Y(row_start + step * 8), _val(contact.position if contact else ""))
 
     # Cuadro COTIZACIÓN: título + nombre de la empresa cotizada
     cot_main = CL_Y + MONEDA_H + 12
-    empresa_cotizada = _truncate_to_width(c, cust.name, COT_W - 16, font="Helvetica-Bold", size=12)
-    c.setFont("Helvetica-Bold", 16)
-    c.drawCentredString(COT_X + COT_W / 2, Y(cot_main), "COTIZACIÓN")
+    empresa_cotizada = _truncate_to_width(c, cust.name, COT_W - 16, font="Helvetica-Bold", size=9)
     c.setFont("Helvetica-Bold", 12)
-    c.drawCentredString(COT_X + COT_W / 2, Y(cot_main + 24), empresa_cotizada)
+    c.drawCentredString(COT_X + COT_W / 2, Y(cot_main), "COTIZACIÓN")
+    c.setFont("Helvetica-Bold", 9)
+    c.drawCentredString(COT_X + COT_W / 2, Y(cot_main + 20), empresa_cotizada)
 
-    # Imagen en esquina superior derecha del cuadro COTIZACIÓN (donde está la X)
-    _img(c, hero_path, COT_X + COT_W - 68, Y(CL_Y + 6), 62, 62)
+    # Imagen en esquina superior derecha, mismo tamaño que el logo
+    _img(c, hero_path, COT_X + COT_W - LW, Y(95), LW, 55)
 
     # ==================== TABLA (ampliada, con líneas verticales) ====================
     TABLE_TOP = 255
@@ -205,24 +248,24 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
     COL_PRICE_LEFT = 436
     COL_TOTAL_LEFT = 492
     COL_TOTAL_RIGHT = TABLE_RIGHT
-    ROW_H = 24
+    ROW_H = 20
     HEADER_Y = TABLE_TOP
-    HEADER_H = 24
+    HEADER_H = 20
     pad = 6
 
     # Encabezado con fondo teal (truncar si no cabe para evitar solapamientos)
     c.setFillColor(colors.HexColor("#1F7A8C"))
     c.rect(COL_PARTIDA, Y(HEADER_Y + HEADER_H), TABLE_RIGHT - COL_PARTIDA, HEADER_H, fill=1, stroke=0)
     c.setFillColor(colors.white)
-    c.setFont("Helvetica-Bold", 8)
-    header_text_y = HEADER_Y + 10
+    c.setFont("Helvetica-Bold", 7)
+    header_text_y = HEADER_Y + 8
     pad = 6
     c.drawCentredString(COL_PARTIDA + (COL_PARTE - COL_PARTIDA)/2, Y(header_text_y), _truncate_to_width(c, "Partida", COL_PARTE - COL_PARTIDA - pad, font="Helvetica-Bold"))
     c.drawString(COL_PARTE + pad, Y(header_text_y), _truncate_to_width(c, "No de parte", COL_DESC - COL_PARTE - pad, font="Helvetica-Bold"))
     c.drawString(COL_DESC + pad, Y(header_text_y), _truncate_to_width(c, "Descripción", COL_UNIT - COL_DESC - pad, font="Helvetica-Bold"))
     c.drawCentredString(COL_UNIT + (COL_QTY - COL_UNIT)/2, Y(header_text_y), _truncate_to_width(c, "Unidad", COL_QTY - COL_UNIT - pad, font="Helvetica-Bold"))
     c.drawCentredString(COL_QTY + (COL_PRICE_LEFT - COL_QTY)/2, Y(header_text_y), _truncate_to_width(c, "Cantidad", COL_PRICE_LEFT - COL_QTY - pad, font="Helvetica-Bold"))
-    c.drawCentredString(COL_PRICE_LEFT + (COL_TOTAL_LEFT - COL_PRICE_LEFT)/2, Y(header_text_y), _truncate_to_width(c, "Precio Unit.", COL_TOTAL_LEFT - COL_PRICE_LEFT - pad, font="Helvetica-Bold"))
+    c.drawCentredString(COL_PRICE_LEFT + (COL_TOTAL_LEFT - COL_PRICE_LEFT)/2, Y(header_text_y), _truncate_to_width(c, "Precio Unit.", COL_TOTAL_LEFT - COL_PRICE_LEFT - pad, font="Helvetica-Bold", size=7))
     c.drawCentredString(COL_TOTAL_LEFT + (COL_TOTAL_RIGHT - COL_TOTAL_LEFT)/2, Y(header_text_y), _truncate_to_width(c, "Total", COL_TOTAL_RIGHT - COL_TOTAL_LEFT - pad, font="Helvetica-Bold"))
     c.setFillColor(colors.black)
 
@@ -256,16 +299,16 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
     for group_name, group_items in groups:
         if group_name:
             # Fila de grupo (sin línea debajo)
-            c.setFont("Helvetica-Bold", 8)
+            c.setFont("Helvetica-Bold", 7)
             c.drawCentredString(COL_PARTIDA + W_PARTIDA/2, Y(y_row), _truncate_to_width(c, str(partida), W_PARTIDA))
             c.drawString(COL_DESC + pad, Y(y_row), _truncate_to_width(c, group_name, W_DESC))
             y_row += ROW_H
             for i, item in enumerate(sorted(group_items, key=lambda x: (x.order_in_group, x.id))):
                 cam = item.camera_model
                 desc = cam.name or cam.model_code
-                unidad = "Pza." if "cámara" in desc.lower() or "camera" in desc.lower() else "Serv."
+                unidad = "Pza."
                 sub_partida = f"{partida}.{i + 1}"
-                c.setFont("Helvetica", 8)
+                c.setFont("Helvetica", 7)
                 c.drawCentredString(COL_PARTIDA + W_PARTIDA/2, Y(y_row), _truncate_to_width(c, sub_partida, W_PARTIDA))
                 c.drawString(COL_PARTE + pad, Y(y_row), _truncate_to_width(c, cam.model_code, W_PARTE))
                 c.drawString(COL_DESC + pad, Y(y_row), _truncate_to_width(c, desc, W_DESC))
@@ -280,8 +323,8 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
             for item in group_items:
                 cam = item.camera_model
                 desc = cam.name or cam.model_code
-                unidad = "Pza." if "cámara" in desc.lower() or "camera" in desc.lower() else "Serv."
-                c.setFont("Helvetica", 8)
+                unidad = "Pza."
+                c.setFont("Helvetica", 7)
                 c.drawCentredString(COL_PARTIDA + W_PARTIDA/2, Y(y_row), _truncate_to_width(c, str(partida), W_PARTIDA))
                 c.drawString(COL_PARTE + pad, Y(y_row), _truncate_to_width(c, cam.model_code, W_PARTE))
                 c.drawString(COL_DESC + pad, Y(y_row), _truncate_to_width(c, desc, W_DESC))
@@ -292,10 +335,11 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
                 y_row += ROW_H
                 partida += 1
 
+    # Descuento antes del total
     disc = quote.special_discount_amount or Decimal("0")
     if disc != 0:
         pct = quote.special_discount_percent or 0
-        c.setFont("Helvetica-Bold", 8)
+        c.setFont("Helvetica-Bold", 7)
         c.drawString(COL_DESC + pad, Y(y_row), _truncate_to_width(c, "Descuento", W_DESC))
         c.drawCentredString(COL_UNIT + W_UNIT/2, Y(y_row), "Desc.")
         c.drawCentredString(COL_QTY + W_QTY/2, Y(y_row), "1")
@@ -303,28 +347,35 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
         c.drawRightString(COL_TOTAL_RIGHT - pad, Y(y_row), _truncate_to_width(c, f"-{_fmt_money(disc)}", W_TOTAL))
         y_row += ROW_H
 
+    c.setFont("Helvetica-Bold", 7)
+    c.drawCentredString(COL_PRICE_LEFT + W_PRICE/2, Y(y_row + 6), "Total")
+    c.drawRightString(COL_TOTAL_RIGHT - pad, Y(y_row + 6), _truncate_to_width(c, _fmt_money(quote.total) + " MX", W_TOTAL, size=7))
+    y_row += ROW_H + 16
+
+    # Espacio para bajar los opcionales (hasta el área indicada)
+    TABLE_BOTTOM_Y = 680
+    space_for_opts = len(optional_rows) * ROW_H + ROW_H + 10 if optional_rows else 0  # +ROW_H para "Opcional"
+    gap = max(0, TABLE_BOTTOM_Y - y_row - space_for_opts)
+    y_row += gap
+
+    # Etiqueta "Opcional" antes de los items opcionales
     if optional_rows:
-        y_row += 5
-        c.setFont("Helvetica-Bold", 8)
+        c.setFont("Helvetica-Bold", 7)
         c.drawString(COL_DESC + pad, Y(y_row), "Opcional")
         y_row += ROW_H
 
+    # Opcionales abajo (después del Total)
     for opt in optional_rows:
-        c.setFont("Helvetica", 8)
+        c.setFont("Helvetica", 7)
         c.drawCentredString(COL_PARTIDA + W_PARTIDA/2, Y(y_row), _truncate_to_width(c, str(opt.get("partida", partida)), W_PARTIDA))
         c.drawString(COL_PARTE + pad, Y(y_row), _truncate_to_width(c, "—", W_PARTE))
         c.drawString(COL_DESC + pad, Y(y_row), _truncate_to_width(c, opt.get("desc", ""), W_DESC))
         c.drawCentredString(COL_UNIT + W_UNIT/2, Y(y_row), _truncate_to_width(c, "Serv.", W_UNIT))
         c.drawCentredString(COL_QTY + W_QTY/2, Y(y_row), _truncate_to_width(c, "1", W_QTY))
-        c.drawRightString(COL_TOTAL_LEFT - pad, Y(y_row), _truncate_to_width(c, _fmt_money(opt.get("monto")), W_PRICE))
-        c.setFont("Helvetica-Bold", 8)
+        c.drawRightString(COL_TOTAL_LEFT - pad, Y(y_row), _truncate_to_width(c, _fmt_money(opt.get("monto")), W_PRICE, size=7))
+        c.setFont("Helvetica-Bold", 7)
         c.drawRightString(COL_TOTAL_RIGHT - pad, Y(y_row), _truncate_to_width(c, _fmt_money(opt.get("monto")) + " MX", W_TOTAL))
         y_row += ROW_H
-
-    c.setFont("Helvetica-Bold", 8)
-    c.drawCentredString(COL_PRICE_LEFT + W_PRICE/2, Y(y_row + 8), "Total")
-    c.drawRightString(COL_TOTAL_RIGHT - pad, Y(y_row + 8), _truncate_to_width(c, _fmt_money(quote.total) + " MX", W_TOTAL))
-    y_row += ROW_H + 16
 
     # La tabla de partidas se extiende hasta el pie de página
     BOTTOM_MARGIN = 60  # margen inferior mínimo (pts desde el borde)
@@ -343,17 +394,38 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
     # Línea horizontal inferior de la tabla
     c.line(COL_PARTIDA, tbl_bottom, COL_TOTAL_RIGHT, tbl_bottom)
 
-    # ==================== PIE (apartados en celdas) ====================
+    # ==================== PIE (layout como referencia: 2 filas, 3 columnas) ====================
     sales_name = quote.sales_user.get_full_name() or quote.sales_user.username
-    authorized = getattr(django_settings, "QUOTE_PDF_AUTHORIZED", "") or ""
+    authorized = getattr(django_settings, "QUOTE_PDF_AUTHORIZED", "Carlos Medina") or "Carlos Medina"
+    # Datos de Observaciones: settings primero, luego quote.terms parseado
+    parsed = _parse_terms(quote.terms)
+    payment_form = (
+        getattr(django_settings, "QUOTE_PDF_PAYMENT_FORM", "") or ""
+    ) or parsed["payment"]
+    delivery_time = (
+        getattr(django_settings, "QUOTE_PDF_DELIVERY_TIME", "") or ""
+    ) or parsed["delivery"]
+    warranty = (
+        getattr(django_settings, "QUOTE_PDF_WARRANTY", "") or ""
+    ) or parsed["warranty"]
+    delivery_place = (
+        getattr(django_settings, "QUOTE_PDF_DELIVERY_PLACE", "") or ""
+    ) or parsed["place"]
 
-    # Celdas del pie: 3 columnas bien proporcionadas (alineadas con la tabla)
+    # 3 columnas: Realizada por | Autorizado | Observaciones (misma estructura que referencia)
     FOOTER_LEFT = COL_PARTIDA
-    FOOTER_MID = 210
-    FOOTER_RIGHT = 370
+    FOOTER_MID = 185
+    FOOTER_RIGHT = 295
     FOOTER_RIGHT_END = TABLE_RIGHT
-    CELL_H = FOOTER_H / 6  # 6 filas, altura uniforme sin pasarse
-    pad_f = 8
+    pad_f = 10
+    # 2 filas: encabezado + contenido
+    ROW1_H = 22
+    ROW2_H = FOOTER_H - ROW1_H
+    obs_pad = 10
+    obs_labels_x = FOOTER_RIGHT + obs_pad
+    obs_values_x = FOOTER_RIGHT + 112  # sub-columna de valores (labels ~96pts)
+    W_OBS_VAL = FOOTER_RIGHT_END - obs_values_x - obs_pad
+    line_h = 7  # espacio entre líneas
 
     # Dibujar celdas del pie
     c.setLineWidth(0.5)
@@ -366,40 +438,56 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
     c.line(FOOTER_RIGHT, footer_bottom, FOOTER_RIGHT, footer_top)
     c.line(FOOTER_RIGHT_END, footer_bottom, FOOTER_RIGHT_END, footer_top)
 
-    # Líneas horizontales entre filas (6 filas)
-    for i in range(1, 6):
-        y_cell = FOOTER_Y + i * CELL_H
-        c.line(FOOTER_LEFT, Y(y_cell), FOOTER_RIGHT_END, Y(y_cell))
-    # Línea inferior del pie (cierra el recuadro sin pasarse)
+    # Línea horizontal entre fila 1 y 2
+    row1_bottom = FOOTER_Y + ROW1_H
+    c.line(FOOTER_LEFT, Y(row1_bottom), FOOTER_RIGHT_END, Y(row1_bottom))
+
+    # Línea vertical entre sub-columnas de Observaciones (labels | values)
+    c.line(obs_values_x - 6, footer_bottom, obs_values_x - 6, Y(row1_bottom))
+
+    # Línea horizontal inferior (cierra el recuadro del pie)
     c.line(FOOTER_LEFT, footer_bottom, FOOTER_RIGHT_END, footer_bottom)
 
-    # Contenido en celdas (centrado verticalmente)
-    def _cell_y(row):
-        return Y(FOOTER_Y + (row - 0.5) * CELL_H + 5)
+    # Contenido
+    c.setFont("Helvetica", 7)
+    y1 = FOOTER_Y + ROW1_H / 2 + 4
+    y2_base = row1_bottom + 12  # inicio de labels/values en Observaciones
 
-    c.setFont("Helvetica", 9)
+    W_LEFT = FOOTER_MID - FOOTER_LEFT - 85
+    W_MID = FOOTER_RIGHT - FOOTER_MID - pad_f - 10
 
-    # Fila 1: Realizada por | Autorizado | Observaciones
-    c.drawString(FOOTER_LEFT + pad_f, _cell_y(1), "Realizada por:")
-    c.drawString(FOOTER_LEFT + 78, _cell_y(1), _truncate(sales_name, 20))
-    c.drawString(FOOTER_MID + pad_f, _cell_y(1), "Autorizado:")
-    c.drawString(FOOTER_MID + 72, _cell_y(1), _truncate(authorized, 20))
-    c.setFont("Helvetica-Bold", 9)
-    c.drawString(FOOTER_RIGHT + pad_f, _cell_y(1), "Observaciones")
-    c.setFont("Helvetica", 9)
-    if quote.notes:
-        c.drawString(FOOTER_RIGHT + pad_f, _cell_y(2), _truncate(quote.notes, 40))
+    # Fila 1: Realizada por: | Autorizado: | Observaciones (encabezados)
+    c.drawString(FOOTER_LEFT + pad_f, Y(y1), "Realizada por:")
+    c.drawString(FOOTER_MID + pad_f, Y(y1), "Autorizado:")
+    c.setFont("Helvetica-Bold", 7)
+    c.drawString(obs_labels_x, Y(y1), "Observaciones")
+    c.setFont("Helvetica", 7)
 
-    # Fila 2: Precios en | IVA
-    c.drawString(FOOTER_LEFT + pad_f, _cell_y(2), "Precios en:")
-    c.drawString(FOOTER_LEFT + 58, _cell_y(2), "Moneda nacional" + (" /USD" if moneda_display == "USD" else ""))
-    c.drawString(FOOTER_MID + pad_f, _cell_y(2), "IVA Precio más IVA")
+    # Fila 2: valores centrados en col 1 y 2; Observaciones con labels | values
+    y2_center = row1_bottom + ROW2_H / 2 - 4
+    c.drawString(FOOTER_LEFT + pad_f, Y(y2_center), _truncate_to_width(c, sales_name, W_LEFT))
+    c.drawString(FOOTER_MID + pad_f, Y(y2_center), _truncate_to_width(c, authorized, W_MID))
+    obs_items = [
+        ("Precios en:", _truncate_to_width(c, "Moneda nacional" + (" /USD" if moneda_display == "USD" else ""), W_OBS_VAL)),
+        ("IVA", "Precio más IVA"),
+        ("Forma de Pago:", _truncate_to_width(c, payment_form, W_OBS_VAL) or ""),
+        ("Tiempo de Entrega:", _truncate_to_width(c, delivery_time, W_OBS_VAL) or ""),
+        ("Garantía:", _truncate_to_width(c, warranty, W_OBS_VAL) or ""),
+        ("Lugar de entrega:", "Tienda"),
+    ]
+    for i, (label, value) in enumerate(obs_items):
+        y_line = y2_base + i * line_h
+        c.drawString(obs_labels_x, Y(y_line), label)
+        c.drawString(obs_values_x, Y(y_line), value)
 
-    # Filas 3-6: Forma de Pago, Tiempo de Entrega, Garantía, Lugar de entrega
-    c.drawString(FOOTER_LEFT + pad_f, _cell_y(3), "Forma de Pago:")
-    c.drawString(FOOTER_LEFT + pad_f, _cell_y(4), "Tiempo de Entrega:")
-    c.drawString(FOOTER_LEFT + pad_f, _cell_y(5), "Garantía:")
-    c.drawString(FOOTER_MID + pad_f, _cell_y(3), "Lugar de entrega:")
+    # Notas de la cotización en la columna de valores (derecha), debajo de los items
+    # No mostrar SEED_QUOTES ni notas vacías
+    notes_text = (quote.notes or "").strip()
+    if notes_text and notes_text != "SEED_QUOTES":
+        notes_y = y2_base + 6 * line_h + 2
+        obs_lines = _wrap_to_lines(c, notes_text, W_OBS_VAL, max_lines=2)
+        for i, line in enumerate(obs_lines):
+            c.drawString(obs_values_x, Y(notes_y + i * line_h), line)
 
     c.save()
     buf.seek(0)

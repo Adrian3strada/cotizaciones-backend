@@ -24,6 +24,7 @@ class QuoteForm(forms.ModelForm):
             "poe",
             "poe_monto",
             "notes",
+            "terms",
         ]
         widgets = {
             "special_discount_percent": forms.NumberInput(
@@ -33,6 +34,12 @@ class QuoteForm(forms.ModelForm):
             "instalacion_monto": forms.NumberInput(attrs={"min": 0, "step": "0.01", "placeholder": "0"}),
             "inyector_poe_monto": forms.NumberInput(attrs={"min": 0, "step": "0.01", "placeholder": "0"}),
             "poe_monto": forms.NumberInput(attrs={"min": 0, "step": "0.01", "placeholder": "0"}),
+            "terms": forms.Textarea(
+                attrs={
+                    "rows": 3,
+                    "placeholder": "Ej: Entrega 10-15 días hábiles. Pago 50% anticipo, 50% contra entrega. Garantía 1 año.",
+                }
+            ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -42,6 +49,7 @@ class QuoteForm(forms.ModelForm):
         self.fields["instalacion_monto"].required = False
         self.fields["inyector_poe_monto"].required = False
         self.fields["poe_monto"].required = False
+        self.fields["terms"].required = False
         self.fields["contact"].queryset = CustomerContact.objects.none()
         if self.instance and self.instance.pk and self.instance.customer_id:
             self.fields["contact"].queryset = CustomerContact.objects.filter(

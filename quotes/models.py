@@ -241,8 +241,7 @@ class Quote(models.Model):
     def recalculate_totals(self) -> None:
         items = self.items.all()
         subtotal = sum((item.line_subtotal or Decimal("0.00") for item in items), Decimal("0.00"))
-        optional_total = self.get_optional_services_total()
-        # Descuento solo sobre productos (cámaras), no sobre opcionales
+        # Descuento solo sobre productos (cámaras)
         discount_pct = getattr(self, "special_discount_percent", None) or Decimal("0.00")
         self.special_discount_amount = (
             subtotal * discount_pct / Decimal("100")
@@ -250,8 +249,8 @@ class Quote(models.Model):
         products_total = subtotal - self.special_discount_amount
         if products_total < 0:
             products_total = Decimal("0.00")
-        # Base para IVA = total productos (con descuento) + total opcionales
-        base_for_iva = products_total + optional_total
+        # Base para IVA = solo productos (con descuento). Opcionales van aparte.
+        base_for_iva = products_total
         tax_rate = self.tax_rate or Decimal("0.00")
         try:
             tax_amount = (

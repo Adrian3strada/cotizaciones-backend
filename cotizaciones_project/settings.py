@@ -192,5 +192,11 @@ QUOTE_PDF_COMPANY = {
     "rfc": os.environ.get("QUOTE_PDF_COMPANY_RFC", "SCP070410C43"),
     "email": os.environ.get("QUOTE_PDF_COMPANY_EMAIL", "info@sisconper.com"),
 }
-# Nombre para "Autorizado" en el PDF (opcional)
-QUOTE_PDF_AUTHORIZED = os.environ.get("QUOTE_PDF_AUTHORIZED", "")
+# Nombre para "Autorizado" en el PDF (Carlos Medina por defecto)
+QUOTE_PDF_AUTHORIZED = os.environ.get("QUOTE_PDF_AUTHORIZED", "Carlos Medina")
+
+# Pie de página del PDF (opcional)
+QUOTE_PDF_PAYMENT_FORM = os.environ.get("QUOTE_PDF_PAYMENT_FORM", "")
+QUOTE_PDF_DELIVERY_TIME = os.environ.get("QUOTE_PDF_DELIVERY_TIME", "")
+QUOTE_PDF_WARRANTY = os.environ.get("QUOTE_PDF_WARRANTY", "")
+QUOTE_PDF_DELIVERY_PLACE = os.environ.get("QUOTE_PDF_DELIVERY_PLACE", "")
