@@ -473,7 +473,7 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
         ("Forma de Pago:", _truncate_to_width(c, payment_form, W_OBS_VAL) or ""),
         ("Tiempo de Entrega:", _truncate_to_width(c, delivery_time, W_OBS_VAL) or ""),
         ("Garantía:", _truncate_to_width(c, warranty, W_OBS_VAL) or ""),
-        ("Lugar de entrega:", "Tienda"),
+        ("Lugar de entrega:", _truncate_to_width(c, delivery_place or "Tienda", W_OBS_VAL) or "Tienda"),
     ]
     for i, (label, value) in enumerate(obs_items):
         y_line = y2_base + i * line_h

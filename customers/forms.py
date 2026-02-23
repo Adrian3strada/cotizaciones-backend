@@ -8,11 +8,14 @@ class CustomerForm(forms.ModelForm):
         model = Customer
         fields = [
             "name",
+            "rfc",
             "website",
             "street_address",
             "neighborhood",
+            "city",
             "postal_code",
             "phone",
+            "mobile",
         ]
 
 

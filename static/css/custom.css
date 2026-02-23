@@ -166,6 +166,11 @@ body {
     background-color: rgba(10, 18, 28, 0.7);
 }
 
+.theme-dark .table tbody tr.table-secondary {
+    background-color: rgba(20, 45, 75, 0.6);
+    color: var(--brand-text);
+}
+
 .theme-dark .table-hover tbody tr:hover {
     background-color: rgba(20, 34, 52, 0.8);
 }

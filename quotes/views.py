@@ -18,10 +18,13 @@ import json
 from decimal import Decimal
 from pathlib import Path
 
-from quotes.forms import QuoteForm, QuoteItemFormSet
+from django.db.models.signals import post_delete, post_save
+
 from catalog.models import CameraModel
 from customers.models import Customer
+from quotes.forms import QuoteForm, QuoteItemFormSet
 from quotes.models import Quote, QuoteItem
+from quotes.signals import quote_item_deleted, quote_item_saved
 
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = "dashboard.html"
@@ -324,7 +327,13 @@ def quote_create(request):
                 with transaction.atomic():
                     quote.save()
                     formset.instance = quote
-                    formset.save()
+                    post_save.disconnect(quote_item_saved, sender=QuoteItem)
+                    post_delete.disconnect(quote_item_deleted, sender=QuoteItem)
+                    try:
+                        formset.save()
+                    finally:
+                        post_save.connect(quote_item_saved, sender=QuoteItem)
+                        post_delete.connect(quote_item_deleted, sender=QuoteItem)
                     quote.recalculate_totals()
                 messages.success(request, "Cotización creada.")
                 return redirect("quotes:detail", pk=quote.pk)
@@ -371,7 +380,13 @@ def quote_update(request, pk):
             else:
                 with transaction.atomic():
                     updated_quote.save()
-                    formset.save()
+                    post_save.disconnect(quote_item_saved, sender=QuoteItem)
+                    post_delete.disconnect(quote_item_deleted, sender=QuoteItem)
+                    try:
+                        formset.save()
+                    finally:
+                        post_save.connect(quote_item_saved, sender=QuoteItem)
+                        post_delete.connect(quote_item_deleted, sender=QuoteItem)
                     updated_quote.recalculate_totals()
                 messages.success(request, "Cotización actualizada.")
                 return redirect("quotes:detail", pk=quote.pk)
@@ -482,6 +497,8 @@ def quote_duplicate(request, pk):
                 quantity=item.quantity,
                 unit_price=item.unit_price,
                 discount_percent=item.discount_percent,
+                group_name=item.group_name or "",
+                order_in_group=item.order_in_group,
             )
         new_quote.recalculate_totals()
     messages.success(request, "Cotización duplicada. Puedes editarla ahora.")
@@ -680,7 +697,7 @@ def report_view(request):
             ),
             "sales_users": (
                 get_user_model()
-                .objects.filter(quote__in=queryset)
+                .objects.filter(quote_set__in=queryset)
                 .distinct()
                 .values_list("id", "username")
                 .order_by("username")

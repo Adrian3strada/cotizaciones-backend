@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
@@ -124,7 +126,7 @@ class Quote(models.Model):
         return self.quote_number
 
     def clean(self) -> None:
-        if self.issue_date:
+        if self.issue_date and not self.valid_until:
             self.valid_until = self.issue_date + timedelta(days=30)
         if self.status == self.STATUS_SENT and self.pk and not self.items.exists():
             raise ValidationError({"status": "No puedes enviar una cotización sin items."})
@@ -138,7 +140,7 @@ class Quote(models.Model):
             )
 
     def save(self, *args, **kwargs):
-        if self.issue_date:
+        if self.issue_date and not self.valid_until:
             self.valid_until = self.issue_date + timedelta(days=30)
         if self.valid_until and self.status != self.STATUS_ACCEPTED:
             if self.valid_until < timezone.localdate():
@@ -208,6 +210,29 @@ class Quote(models.Model):
             total += m
         return total
 
+    def get_grouped_items(self) -> list[tuple[str | None, list["QuoteItem"]]]:
+        """Items agrupados por group_name (igual que en el PDF). Retorna [(group_name, [items]), ...]."""
+        items = list(self.items.select_related("camera_model").order_by("id"))
+        groups: list[tuple[str | None, list[QuoteItem]]] = []
+        current_group: tuple[str, list[QuoteItem]] | None = None
+        for item in items:
+            gn = (item.group_name or "").strip()
+            if gn:
+                if current_group is None or current_group[0] != gn:
+                    current_group = (gn, [])
+                    groups.append(current_group)
+                current_group[1].append(item)
+            else:
+                current_group = None
+                groups.append((None, [item]))
+        # Ordenar items dentro de cada grupo
+        result = []
+        for gn, grp_items in groups:
+            if gn:
+                grp_items = sorted(grp_items, key=lambda x: (x.order_in_group, x.id))
+            result.append((gn, grp_items))
+        return result
+
     def get_optional_rows(self) -> list[dict]:
         """Lista de filas opcionales con partida consecutiva (sigue a los ítems de productos)."""
         base_partida = self.items.count()
@@ -258,7 +283,8 @@ class Quote(models.Model):
             ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         except InvalidOperation:
             tax_amount = Decimal("0.00")
-        total = base_for_iva + tax_amount
+        optional_total = self.get_optional_services_total()
+        total = base_for_iva + tax_amount + optional_total
         self.subtotal = subtotal
         self.tax_amount = tax_amount
         self.total = total

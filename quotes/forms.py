@@ -1,5 +1,8 @@
+from datetime import timedelta
+
 from django import forms
 from django.forms import inlineformset_factory
+from django.utils import timezone
 
 from customers.models import CustomerContact
 from quotes.models import Quote, QuoteItem
@@ -13,6 +16,8 @@ class QuoteForm(forms.ModelForm):
             "contact",
             "status",
             "currency",
+            "issue_date",
+            "valid_until",
             "tax_rate",
             "special_discount_percent",
             "cableado",
@@ -27,6 +32,8 @@ class QuoteForm(forms.ModelForm):
             "terms",
         ]
         widgets = {
+            "issue_date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "valid_until": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "special_discount_percent": forms.NumberInput(
                 attrs={"min": 0, "max": 100, "step": "0.01", "placeholder": "0"}
             ),
@@ -44,6 +51,11 @@ class QuoteForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["valid_until"].required = False
+        if not self.instance.pk:
+            today = timezone.localdate()
+            self.fields["issue_date"].initial = today
+            self.fields["valid_until"].initial = today + timedelta(days=30)
         self.fields["special_discount_percent"].required = False
         self.fields["cableado_monto"].required = False
         self.fields["instalacion_monto"].required = False

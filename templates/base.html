@@ -101,7 +101,7 @@
                     {% block breadcrumbs %}{% endblock %}
                     {% if messages %}
                     {% for message in messages %}
-                    <div class="alert alert-info">{{ message }}</div>
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% elif message.tags == 'debug' %}secondary{% else %}info{% endif %}">{{ message }}</div>
                     {% endfor %}
                     {% endif %}
                     {% block content %}{% endblock %}
