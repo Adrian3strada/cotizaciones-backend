@@ -29,7 +29,9 @@ class Command(BaseCommand):
         User = get_user_model()
         user = User.objects.filter(is_staff=True).first()
         if not user:
-            user = User.objects.create_user(username="ventas", password="ventas123", is_staff=True)
+            user = User.objects.create_user(
+                username="ventas", password="ventas123", is_staff=True, email="ventas@ejemplo.com"
+            )
             self.stdout.write(self.style.WARNING("Creado usuario 'ventas' para asignar cotizaciones."))
 
         customers = list(

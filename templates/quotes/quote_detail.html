@@ -42,6 +42,7 @@
                 </form>
                 {% endif %}
                 {% endif %}
+                <a class="btn btn-outline-info mr-1" href="{% url 'quotes:pdf' object.pk %}?preview=1" target="_blank" rel="noopener">Vista previa PDF</a>
                 <a class="btn btn-primary" href="{% url 'quotes:pdf' object.pk %}">Descargar PDF</a>
             </div>
         </div>

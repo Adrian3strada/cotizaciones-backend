@@ -27,6 +27,7 @@ class Command(BaseCommand):
                 username="ventas",
                 password="ventas123",
                 is_staff=True,
+                email="ventas@ejemplo.com",
             )
 
         if options.get("reset"):

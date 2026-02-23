@@ -121,6 +121,11 @@ class Quote(models.Model):
         verbose_name = "Cotización"
         verbose_name_plural = "Cotizaciones"
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["sales_user", "status"]),
+            models.Index(fields=["issue_date"]),
+            models.Index(fields=["customer", "status"]),
+        ]
 
     def __str__(self) -> str:
         return self.quote_number

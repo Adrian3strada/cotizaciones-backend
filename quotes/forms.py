@@ -81,8 +81,14 @@ class QuoteForm(forms.ModelForm):
         cleaned_data = super().clean()
         customer = cleaned_data.get("customer")
         contact = cleaned_data.get("contact")
+        valid_until = cleaned_data.get("valid_until")
         if contact and customer and contact.customer_id != customer.id:
             self.add_error("contact", "El contacto debe pertenecer al cliente seleccionado.")
+        if valid_until and valid_until < timezone.localdate():
+            self.add_error(
+                "valid_until",
+                "La vigencia no puede ser anterior a hoy. La cotización estaría expirada.",
+            )
         return cleaned_data
 
 

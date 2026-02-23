@@ -6,6 +6,7 @@ from django.db import models, transaction
 from django.db.models import Count, DecimalField, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.db.models.functions import ExtractMonth
+import csv
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.staticfiles import finders
@@ -163,47 +164,7 @@ class QuoteListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related("customer", "sales_user")
-        if not self.request.user.is_superuser:
-            queryset = queryset.filter(sales_user=self.request.user)
-        status = self.request.GET.get("status")
-        customer_id = self.request.GET.get("customer")
-        sales_user_id = self.request.GET.get("sales_user")
-        date_from = parse_date(self.request.GET.get("date_from") or "")
-        date_to = parse_date(self.request.GET.get("date_to") or "")
-        search = (self.request.GET.get("q") or "").strip()
-
-        if search:
-            q_filter = (
-                Q(quote_number__icontains=search)
-                | Q(customer__name__icontains=search)
-            )
-            queryset = queryset.filter(q_filter)
-        if status:
-            queryset = queryset.filter(status=status)
-        if customer_id:
-            try:
-                customer_id = int(customer_id)
-                queryset = queryset.filter(customer_id=customer_id)
-            except (TypeError, ValueError):
-                pass
-        if sales_user_id:
-            try:
-                sales_user_id = int(sales_user_id)
-                queryset = queryset.filter(sales_user_id=sales_user_id)
-            except (TypeError, ValueError):
-                pass
-        if date_from:
-            queryset = queryset.filter(issue_date__gte=date_from)
-        if date_to:
-            queryset = queryset.filter(issue_date__lte=date_to)
-        order_by = self.request.GET.get("order_by", "-issue_date")
-        allowed = {"issue_date", "-issue_date", "quote_number", "-quote_number", "total", "-total", "valid_until", "-valid_until", "customer__name", "-customer__name"}
-        if order_by in allowed:
-            queryset = queryset.order_by(order_by)
-        else:
-            queryset = queryset.order_by("-issue_date")
-        return queryset
+        return _get_quote_list_queryset(self.request)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -298,6 +259,46 @@ def _build_file_uri(path_value):
     if not path_value:
         return ""
     return Path(path_value).resolve().as_uri()
+
+
+def _get_quote_list_queryset(request):
+    """Queryset filtrado para lista y export CSV (misma lógica)."""
+    queryset = Quote.objects.select_related("customer", "sales_user")
+    if not request.user.is_superuser:
+        queryset = queryset.filter(sales_user=request.user)
+    status = request.GET.get("status")
+    customer_id = request.GET.get("customer")
+    sales_user_id = request.GET.get("sales_user")
+    date_from = parse_date(request.GET.get("date_from") or "")
+    date_to = parse_date(request.GET.get("date_to") or "")
+    search = (request.GET.get("q") or "").strip()
+    if search:
+        queryset = queryset.filter(
+            Q(quote_number__icontains=search) | Q(customer__name__icontains=search)
+        )
+    if status:
+        queryset = queryset.filter(status=status)
+    if customer_id:
+        try:
+            queryset = queryset.filter(customer_id=int(customer_id))
+        except (TypeError, ValueError):
+            pass
+    if sales_user_id:
+        try:
+            queryset = queryset.filter(sales_user_id=int(sales_user_id))
+        except (TypeError, ValueError):
+            pass
+    if date_from:
+        queryset = queryset.filter(issue_date__gte=date_from)
+    if date_to:
+        queryset = queryset.filter(issue_date__lte=date_to)
+    order_by = request.GET.get("order_by", "-issue_date")
+    allowed = {"issue_date", "-issue_date", "quote_number", "-quote_number", "total", "-total", "valid_until", "-valid_until", "customer__name", "-customer__name"}
+    if order_by in allowed:
+        queryset = queryset.order_by(order_by)
+    else:
+        queryset = queryset.order_by("-issue_date")
+    return queryset
 
 
 def _validate_quote_action(quote, require_items=True):
@@ -569,7 +570,10 @@ def quote_pdf(request, pk):
         filename_number = filename_number.replace("COT-", "SCP-", 1)
     elif not filename_number.startswith("SCP-"):
         filename_number = f"SCP-{filename_number}"
-    response["Content-Disposition"] = f'attachment; filename="{filename_number}.pdf"'
+    if request.GET.get("preview"):
+        response["Content-Disposition"] = f'inline; filename="{filename_number}.pdf"'
+    else:
+        response["Content-Disposition"] = f'attachment; filename="{filename_number}.pdf"'
     return response
 
 
@@ -697,7 +701,7 @@ def report_view(request):
             ),
             "sales_users": (
                 get_user_model()
-                .objects.filter(quote_set__in=queryset)
+                .objects.filter(quote__in=queryset)
                 .distinct()
                 .values_list("id", "username")
                 .order_by("username")
@@ -709,3 +713,28 @@ def report_view(request):
             "status_totals": status_totals,
         },
     )
+
+
+@login_required
+@permission_required("quotes.view_quote", raise_exception=True)
+def quote_list_export(request):
+    """Exporta la lista de cotizaciones filtrada a CSV."""
+    queryset = _get_quote_list_queryset(request)
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = 'attachment; filename="cotizaciones.csv"'
+    response.write("\ufeff")  # BOM para Excel UTF-8
+    writer = csv.writer(response)
+    writer.writerow(["Número", "Cliente", "Vendedor", "Estatus", "Total", "Moneda", "Vigencia", "Fecha emisión"])
+    status_labels = dict(Quote.STATUS_CHOICES)
+    for q in queryset[:1000]:  # límite razonable
+        writer.writerow([
+            q.quote_number,
+            q.customer.name,
+            q.sales_user.get_full_name() or q.sales_user.username,
+            status_labels.get(q.status, q.status),
+            q.total,
+            q.currency,
+            q.valid_until,
+            q.issue_date,
+        ])
+    return response

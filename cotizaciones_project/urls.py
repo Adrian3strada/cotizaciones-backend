@@ -21,15 +21,30 @@ from django.contrib.auth import logout
 from django.contrib.auth import views as auth_views
 from django.shortcuts import redirect
 from django.urls import include, path
+from django.views.generic import TemplateView
 
 
 def logout_view(request):
     logout(request)
     return redirect('login')
 
+
+def handler404(request, exception):
+    from django.shortcuts import render
+    return render(request, "404.html", status=404)
+
+
+def handler500(request):
+    from django.shortcuts import render
+    return render(request, "500.html", status=500)
+
+
 urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', logout_view, name='logout'),
+    path('password-reset/', TemplateView.as_view(
+        template_name='registration/password_reset_info.html',
+    ), name='password_reset'),
     path('admin/', admin.site.urls),
     path('', include('quotes.urls')),
     path('clientes/', include('customers.urls')),

@@ -7,6 +7,7 @@ app_name = "quotes"
 urlpatterns = [
     path("", views.DashboardView.as_view(), name="dashboard"),
     path("cotizaciones/", views.QuoteListView.as_view(), name="list"),
+    path("cotizaciones/exportar/", views.quote_list_export, name="list_export"),
     path("cotizaciones/nueva/", views.quote_create, name="create"),
     path("cotizaciones/<int:pk>/", views.QuoteDetailView.as_view(), name="detail"),
     path("cotizaciones/<int:pk>/editar/", views.quote_update, name="update"),

@@ -156,3 +156,51 @@ class QuoteViewTests(TestCase):
             reverse("quotes:pdf", kwargs={"pk": self.quote.pk})
         )
         self.assertEqual(response.status_code, 302)
+
+    def test_vendor_cannot_see_other_vendor_quotes(self):
+        """Un vendedor no puede ver cotizaciones de otro vendedor."""
+        other_user = User.objects.create_user(username="otro", password="testpass123")
+        ct = ContentType.objects.get(app_label="quotes", model="quote")
+        perms = Permission.objects.filter(content_type=ct, codename="view_quote")
+        other_user.user_permissions.add(*perms)
+        other_quote = Quote.objects.create(
+            quote_number="SCP-2026-000099",
+            customer=self.customer,
+            sales_user=other_user,
+            status=Quote.STATUS_DRAFT,
+            currency=Quote.CURRENCY_MXN,
+        )
+        self.client.login(username="vendedor", password="testpass123")
+        response = self.client.get(
+            reverse("quotes:detail", kwargs={"pk": other_quote.pk})
+        )
+        self.assertEqual(response.status_code, 302)
+
+    def test_full_flow_send_accept(self):
+        """Flujo: enviar cotización en borrador, luego aceptar."""
+        self.client.login(username="vendedor", password="testpass123")
+        # Enviar
+        response = self.client.post(
+            reverse("quotes:send", kwargs={"pk": self.quote.pk}),
+            follow=True,
+        )
+        self.quote.refresh_from_db()
+        self.assertEqual(self.quote.status, Quote.STATUS_SENT)
+        # Aceptar
+        response = self.client.post(
+            reverse("quotes:mark", kwargs={"pk": self.quote.pk, "status": "ACCEPTED"}),
+            follow=True,
+        )
+        self.quote.refresh_from_db()
+        self.assertEqual(self.quote.status, Quote.STATUS_ACCEPTED)
+
+    def test_csv_export_requires_login(self):
+        response = self.client.get(reverse("quotes:list_export"))
+        self.assertEqual(response.status_code, 302)
+
+    def test_csv_export_ok(self):
+        self.client.login(username="vendedor", password="testpass123")
+        response = self.client.get(reverse("quotes:list_export"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/csv; charset=utf-8")
+        self.assertIn(b"SCP-2026-000010", response.content)
