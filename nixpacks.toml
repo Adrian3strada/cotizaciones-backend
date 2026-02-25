@@ -2,8 +2,9 @@
 # https://nixpacks.com/docs/configuration
 
 [phases.setup]
-# "..." incluye los paquetes por defecto (Python, pip) para que funcionen
-nixPkgs = ["...", "postgresql"]
+# "..." incluye los paquetes por defecto (Python, pip)
+# No añadir postgresql: provoca conflicto y no es necesario (psycopg se instala con pip)
+nixPkgs = ["..."]
 
 [phases.install]
 cmds = ["pip install -r requirements.txt"]
