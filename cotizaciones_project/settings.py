@@ -45,6 +45,18 @@ else:
         "f20c041eefef.ngrok-free.app",
         "6b73-187-195-124-21.ngrok-free.app",
     ]
+# Siempre incluir dominios Railway (por si ALLOWED_HOSTS env los sobrescribe)
+_railway_hosts = [".railway.app", ".up.railway.app"]
+for h in _railway_hosts:
+    if h not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(h)
+# Railway inyecta RAILWAY_PUBLIC_DOMAIN (ej: sisconper-cotizaciones.up.railway.app)
+_railway_public = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
+if _railway_public and _railway_public not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(_railway_public)
+# Si estamos en Railway y sigue fallando, permitir cualquier host (solo en Railway)
+if os.environ.get("RAILWAY_PUBLIC_DOMAIN") and "*" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append("*")
 
 _csrf_trusted_origins_env = os.environ.get("CSRF_TRUSTED_ORIGINS")
 if _csrf_trusted_origins_env:
