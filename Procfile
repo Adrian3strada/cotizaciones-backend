@@ -1,1 +1,1 @@
-web: python manage.py migrate --noinput && gunicorn cotizaciones_project.wsgi:application
+web: python scripts/start.py
