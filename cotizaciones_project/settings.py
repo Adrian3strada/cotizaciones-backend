@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -35,6 +36,8 @@ else:
     ALLOWED_HOSTS = [
         "localhost",
         "127.0.0.1",
+        ".railway.app",
+        ".up.railway.app",
         ".ngrok-free.app",
         "070b-2806-103e-c-3f94-c4dd-15ca-650-5729.ngrok-free.app",
         "f82067d55692.ngrok-free.app",
@@ -57,6 +60,10 @@ else:
         "https://f20c041eefef.ngrok-free.app",
         "https://6b73-187-195-124-21.ngrok-free.app",
     ]
+# Railway: añadir dominio público cuando esté disponible
+_railway_domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
+if _railway_domain:
+    CSRF_TRUSTED_ORIGINS = list(CSRF_TRUSTED_ORIGINS) + [f"https://{_railway_domain}"]
 
 
 # Application definition
@@ -111,22 +118,40 @@ WSGI_APPLICATION = 'cotizaciones_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-if os.environ.get('POSTGRES_DB'):
+_database_url = os.environ.get("DATABASE_URL")
+if _database_url:
+    # Railway y otros proveedores usan DATABASE_URL (postgres:// o postgresql://)
+    _parsed = urlparse(_database_url)
+    _db_name = _parsed.path.lstrip("/")
+    if _parsed.scheme == "postgres":
+        _parsed = _parsed._replace(scheme="postgresql")
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('POSTGRES_DB'),
-            'USER': os.environ.get('POSTGRES_USER', ''),
-            'PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
-            'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
-            'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": _db_name,
+            "USER": _parsed.username,
+            "PASSWORD": _parsed.password,
+            "HOST": _parsed.hostname,
+            "PORT": _parsed.port or "5432",
+            "OPTIONS": {"sslmode": "require"},
+        }
+    }
+elif os.environ.get("POSTGRES_DB") or os.environ.get("PGDATABASE"):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("POSTGRES_DB") or os.environ.get("PGDATABASE"),
+            "USER": os.environ.get("POSTGRES_USER") or os.environ.get("PGUSER", ""),
+            "PASSWORD": os.environ.get("POSTGRES_PASSWORD") or os.environ.get("PGPASSWORD", ""),
+            "HOST": os.environ.get("POSTGRES_HOST") or os.environ.get("PGHOST", "localhost"),
+            "PORT": os.environ.get("POSTGRES_PORT") or os.environ.get("PGPORT", "5432"),
         }
     }
 else:
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
         }
     }
 

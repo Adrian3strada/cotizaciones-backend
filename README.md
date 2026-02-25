@@ -77,7 +77,59 @@ Los datos de la empresa en el PDF (nombre, RFC, dirección, teléfono, etc.) se 
 - Aplicar migraciones: `python manage.py migrate`
 - Superusuario: `python manage.py createsuperuser`
 
-## Despliegue en producción
+## Despliegue en Railway
+
+La app está preparada para desplegarse en [Railway](https://railway.app).
+
+### 1. Crear proyecto en Railway
+
+- Entra a [railway.app/new](https://railway.app/new)
+- Elige **Deploy from GitHub repo** y conecta tu repositorio
+- O usa la CLI: `railway init` y luego `railway up`
+
+### 2. Añadir PostgreSQL
+
+- En el proyecto, clic en **+ New** → **Database** → **PostgreSQL**
+- Railway creará la base de datos automáticamente
+
+### 3. Variables de entorno
+
+En el servicio de la app, ve a **Variables** y añade:
+
+| Variable | Valor |
+|----------|-------|
+| `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` |
+| `SECRET_KEY` | Una clave secreta segura (genera una nueva para producción) |
+| `DEBUG` | `False` |
+| `ALLOWED_HOSTS` | `*` (o tu dominio específico) |
+
+> **Nota:** Reemplaza `Postgres` por el nombre de tu servicio PostgreSQL si es diferente.
+
+### 4. Comando Pre-Deploy (migraciones)
+
+En **Settings** → **Deploy** → **Pre-Deploy Command**, añade:
+
+```
+python manage.py migrate --noinput
+```
+
+### 5. Dominio público
+
+- En **Settings** → **Networking** → **Generate Domain**
+- Railway asignará una URL como `tu-app.up.railway.app`
+
+### 6. Superusuario (primera vez)
+
+Tras el primer deploy, ejecuta en la terminal (con Railway CLI vinculado):
+
+```bash
+railway run python manage.py createsuperuser
+railway run python manage.py setup_groups
+```
+
+---
+
+## Despliegue en producción (general)
 
 - **ALLOWED_HOSTS**: en `.env` define tu dominio, ej. `ALLOWED_HOSTS=midominio.com,www.midominio.com`
 - **CSRF_TRUSTED_ORIGINS**: si usas HTTPS, añade `CSRF_TRUSTED_ORIGINS=https://midominio.com`

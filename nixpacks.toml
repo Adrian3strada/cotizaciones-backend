@@ -1,0 +1,14 @@
+# Configuración de Nixpacks para Railway
+# https://nixpacks.com/docs/configuration
+
+[phases.setup]
+nixPkgs = ["python312", "postgresql"]
+
+[phases.install]
+cmds = ["pip install -r requirements.txt"]
+
+[phases.build]
+cmds = ["python manage.py collectstatic --noinput"]
+
+[start]
+cmd = "gunicorn cotizaciones_project.wsgi:application"
