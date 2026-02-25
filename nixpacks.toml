@@ -2,7 +2,8 @@
 # https://nixpacks.com/docs/configuration
 
 [phases.setup]
-nixPkgs = ["python312", "postgresql"]
+# "..." incluye los paquetes por defecto (Python, pip) para que funcionen
+nixPkgs = ["...", "postgresql"]
 
 [phases.install]
 cmds = ["pip install -r requirements.txt"]
