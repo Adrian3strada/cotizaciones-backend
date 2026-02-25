@@ -1,0 +1,3 @@
+# Solo añadir collectstatic al build (sin tocar setup/install)
+[phases.build]
+cmds = ["python manage.py collectstatic --noinput"]
