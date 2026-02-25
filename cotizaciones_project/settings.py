@@ -215,6 +215,14 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'quotes:dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
+# Cookies seguras para HTTPS (Railway sirve por HTTPS)
+# Solo en producción (DEBUG=False) para que el login funcione correctamente
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Django REST Framework
