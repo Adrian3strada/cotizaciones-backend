@@ -67,6 +67,7 @@ if _csrf_trusted_origins_env:
     ]
 else:
     CSRF_TRUSTED_ORIGINS = [
+        "https://sisconper-cotizaciones.up.railway.app",
         "https://070b-2806-103e-c-3f94-c4dd-15ca-650-5729.ngrok-free.app",
         "https://f82067d55692.ngrok-free.app",
         "https://f20c041eefef.ngrok-free.app",
