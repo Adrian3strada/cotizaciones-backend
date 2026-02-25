@@ -19,9 +19,12 @@ import json
 from decimal import Decimal
 from pathlib import Path
 
+import logging
 from django.db.models.signals import post_delete, post_save
 
 from catalog.models import CameraModel
+
+logger = logging.getLogger(__name__)
 from customers.models import Customer
 from quotes.forms import QuoteForm, QuoteItemFormSet
 from quotes.models import Quote, QuoteItem
@@ -128,6 +131,16 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         for item in last_months:
             item["pct"] = round((float(item["total"]) / float(max_total)) * 100)
 
+        # Comparativa año anterior
+        prev_year = current_date.year - 1
+        prev_year_total = queryset.filter(issue_date__year=prev_year).aggregate(
+            total=Coalesce(Sum("total"), Value(0), output_field=DecimalField(max_digits=14, decimal_places=2))
+        )["total"]
+        year_vs_prev = None
+        if prev_year_total and float(prev_year_total) > 0 and accepted_total:
+            diff_pct = round(((float(accepted_total) - float(prev_year_total)) / float(prev_year_total)) * 100, 1)
+            year_vs_prev = {"prev_total": prev_year_total, "diff_pct": diff_pct}
+
         customer_count = customer_queryset.count()
         active_customer_rate = 0
         if Customer.objects.exists():
@@ -150,6 +163,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 "top_seller": top_seller,
                 "top_models": top_models,
                 "last_months": last_months,
+                "year_vs_prev": year_vs_prev,
                 "active_customer_rate": active_customer_rate,
                 "today_label": current_date.strftime("%d/%m/%Y"),
             }
@@ -193,6 +207,15 @@ class QuoteListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
         context["filter_query_string_no_order"] = q_no_order.urlencode()
         order_by = self.request.GET.get("order_by", "-issue_date")
         context["current_order_by"] = order_by
+        from datetime import timedelta
+        today = timezone.localdate()
+        context["today_iso"] = today.isoformat()
+        context["allowed_order"] = {
+            "issue_date", "-issue_date", "quote_number", "-quote_number",
+            "total", "-total", "valid_until", "-valid_until",
+            "customer__name", "-customer__name", "sales_user__username", "-sales_user__username",
+            "currency", "-currency",
+        }
         return context
 
 
@@ -292,8 +315,28 @@ def _get_quote_list_queryset(request):
         queryset = queryset.filter(issue_date__gte=date_from)
     if date_to:
         queryset = queryset.filter(issue_date__lte=date_to)
+    expiring_days = request.GET.get("expiring_days")
+    if expiring_days:
+        try:
+            days = int(expiring_days)
+            if days > 0:
+                from datetime import timedelta
+                today = timezone.localdate()
+                limit = today + timedelta(days=days)
+                queryset = queryset.filter(
+                    status__in=[Quote.STATUS_DRAFT, Quote.STATUS_SENT],
+                    valid_until__gte=today,
+                    valid_until__lte=limit,
+                )
+        except (TypeError, ValueError):
+            pass
     order_by = request.GET.get("order_by", "-issue_date")
-    allowed = {"issue_date", "-issue_date", "quote_number", "-quote_number", "total", "-total", "valid_until", "-valid_until", "customer__name", "-customer__name"}
+    allowed = {
+        "issue_date", "-issue_date", "quote_number", "-quote_number",
+        "total", "-total", "valid_until", "-valid_until",
+        "customer__name", "-customer__name", "sales_user__username", "-sales_user__username",
+        "currency", "-currency",
+    }
     if order_by in allowed:
         queryset = queryset.order_by(order_by)
     else:
@@ -336,6 +379,7 @@ def quote_create(request):
                         post_save.connect(quote_item_saved, sender=QuoteItem)
                         post_delete.connect(quote_item_deleted, sender=QuoteItem)
                     quote.recalculate_totals()
+                logger.info("Cotización creada", extra={"quote": quote.quote_number, "user": request.user.username})
                 messages.success(request, "Cotización creada.")
                 return redirect("quotes:detail", pk=quote.pk)
     else:
@@ -389,6 +433,7 @@ def quote_update(request, pk):
                         post_save.connect(quote_item_saved, sender=QuoteItem)
                         post_delete.connect(quote_item_deleted, sender=QuoteItem)
                     updated_quote.recalculate_totals()
+                logger.info("Cotización actualizada", extra={"quote": updated_quote.quote_number, "user": request.user.username})
                 messages.success(request, "Cotización actualizada.")
                 return redirect("quotes:detail", pk=quote.pk)
     else:
@@ -434,6 +479,7 @@ def quote_send(request, pk):
         return redirect("quotes:detail", pk=pk)
     quote.status = Quote.STATUS_SENT
     quote.save()
+    logger.info("Cotización enviada", extra={"quote": quote.quote_number, "user": request.user.username})
     messages.success(request, "Cotización enviada.")
     return redirect("quotes:detail", pk=pk)
 
@@ -458,6 +504,7 @@ def quote_mark(request, pk, status):
         return redirect("quotes:detail", pk=pk)
     quote.status = status
     quote.save()
+    logger.info("Cotización %s", status.lower(), extra={"quote": quote.quote_number, "status": status, "user": request.user.username})
     messages.success(request, "Estado actualizado.")
     return redirect("quotes:detail", pk=pk)
 
@@ -713,6 +760,60 @@ def report_view(request):
             "status_totals": status_totals,
         },
     )
+
+
+def _get_report_queryset(request):
+    """Queryset filtrado para reportes (misma lógica que report_view)."""
+    current_year = timezone.localdate().year
+    queryset = Quote.objects.select_related("customer", "sales_user")
+    if not request.user.is_superuser:
+        queryset = queryset.filter(sales_user=request.user)
+    date_from = parse_date(request.GET.get("date_from") or "")
+    date_to = parse_date(request.GET.get("date_to") or "")
+    sales_user_id = request.GET.get("sales_user")
+    customer_id = request.GET.get("customer")
+    if date_from:
+        queryset = queryset.filter(issue_date__gte=date_from)
+    if date_to:
+        queryset = queryset.filter(issue_date__lte=date_to)
+    if sales_user_id:
+        try:
+            queryset = queryset.filter(sales_user_id=int(sales_user_id))
+        except (TypeError, ValueError):
+            pass
+    if customer_id:
+        try:
+            queryset = queryset.filter(customer_id=int(customer_id))
+        except (TypeError, ValueError):
+            pass
+    if not date_from and not date_to:
+        queryset = queryset.filter(issue_date__year=current_year)
+    return queryset.order_by("-issue_date")
+
+
+@login_required
+@permission_required("quotes.view_quote", raise_exception=True)
+def report_export(request):
+    """Exporta el reporte filtrado a CSV."""
+    queryset = _get_report_queryset(request)
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = 'attachment; filename="reporte_cotizaciones.csv"'
+    response.write("\ufeff")
+    writer = csv.writer(response)
+    writer.writerow(["Número", "Cliente", "Vendedor", "Estatus", "Total", "Moneda", "Vigencia", "Fecha emisión"])
+    status_labels = dict(Quote.STATUS_CHOICES)
+    for q in queryset[:2000]:
+        writer.writerow([
+            q.quote_number,
+            q.customer.name,
+            q.sales_user.get_full_name() or q.sales_user.username,
+            status_labels.get(q.status, q.status),
+            q.total,
+            q.currency,
+            q.valid_until,
+            q.issue_date,
+        ])
+    return response
 
 
 @login_required

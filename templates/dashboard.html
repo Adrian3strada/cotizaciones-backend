@@ -168,6 +168,13 @@
                                 <strong>{{ quote_count }}</strong>
                                 <em>{{ conversion_rate }}% conversión</em>
                             </div>
+                            {% if year_vs_prev %}
+                            <div>
+                                <span>vs. año anterior</span>
+                                <strong>{% if year_vs_prev.diff_pct >= 0 %}+{% endif %}{{ year_vs_prev.diff_pct }}%</strong>
+                                <em>Aceptadas este año</em>
+                            </div>
+                            {% endif %}
                             <div>
                                 <span>Aceptadas</span>
                                 <strong>{{ accepted_count }}</strong>

@@ -21,7 +21,7 @@
 
 <div class="card card-primary">
     <div class="card-body">
-        <form method="post">
+        <form method="post" id="quote-form">
             {% csrf_token %}
             {% if form.errors or formset.errors %}
             <div class="alert alert-danger">
@@ -48,7 +48,13 @@
                     </div>
                     {% else %}
                     <div class="form-group">
+                        {% if field.name == 'customer' %}
+                        <label for="customer-search">Buscar cliente</label>
+                        <input type="text" id="customer-search" class="form-control mb-1" placeholder="Escribe para filtrar por nombre...">
                         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {% else %}
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {% endif %}
                         {{ field }}
                         {% if field.help_text %}
                         <small class="form-text text-muted">{{ field.help_text }}</small>
@@ -296,6 +302,21 @@
             customerSelect.addEventListener("change", () => loadContacts(customerSelect.value));
             if (customerSelect.value) loadContacts(customerSelect.value);
             else setContactOptions([], null);
+            // Búsqueda de cliente: filtrar opciones al escribir
+            const customerSearch = document.getElementById("customer-search");
+            if (customerSearch) {
+                customerSearch.addEventListener("input", function () {
+                    const term = this.value.toLowerCase();
+                    const options = customerSelect.querySelectorAll("option");
+                    options.forEach(function (opt) {
+                        if (opt.value === "") {
+                            opt.style.display = "";
+                            return;
+                        }
+                        opt.style.display = term === "" || opt.textContent.toLowerCase().includes(term) ? "" : "none";
+                    });
+                });
+            }
         }
 
         if (!addButton || !formsetBody || !emptyRowTemplate || !totalForms) return;

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Mi perfil{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'quotes:dashboard' %}">Inicio</a></li>
+        <li class="breadcrumb-item active">Mi perfil</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+    <div class="profile-wrapper">
+        <div class="profile-layout">
+            <aside class="profile-sidebar">
+                <div class="profile-avatar">
+                    {% if profile_user.first_name and profile_user.last_name %}
+                    {{ profile_user.first_name|slice:":1"|upper }}{{ profile_user.last_name|slice:":1"|upper }}
+                    {% elif profile_user.get_full_name %}
+                    {{ profile_user.get_full_name|slice:":2"|upper }}
+                    {% else %}
+                    {{ profile_user.username|slice:":2"|upper }}
+                    {% endif %}
+                </div>
+                <h1 class="profile-name">{{ profile_user.get_full_name|default:profile_user.username }}</h1>
+                <p class="profile-username">@{{ profile_user.username }}</p>
+                {% if perms.auth.change_user %}
+                <a class="btn btn-profile-edit" href="{% url 'accounts:update' profile_user.pk %}">
+                    <i class="fas fa-pen"></i> Editar perfil
+                </a>
+                {% endif %}
+            </aside>
+
+            <main class="profile-main">
+                <div class="profile-main-grid">
+                    <section class="profile-section profile-section--info">
+                        <h2 class="profile-section-title"><i class="fas fa-user"></i> Información</h2>
+                        <div class="profile-info-grid">
+                            <div class="profile-info-block">
+                                <span class="profile-info-label">Usuario</span>
+                                <span class="profile-info-value">{{ profile_user.username }}</span>
+                            </div>
+                            <div class="profile-info-block">
+                                <span class="profile-info-label">Nombre completo</span>
+                                <span class="profile-info-value">{{ profile_user.get_full_name|default:"-" }}</span>
+                            </div>
+                            <div class="profile-info-block">
+                                <span class="profile-info-label">Email</span>
+                                <span class="profile-info-value">{{ profile_user.email|default:"-" }}</span>
+                            </div>
+                            <div class="profile-info-block">
+                                <span class="profile-info-label">Estado</span>
+                                {% if profile_user.is_active %}
+                                <span class="profile-status profile-status--active">Activo</span>
+                                {% else %}
+                                <span class="profile-status profile-status--inactive">Inactivo</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="profile-section profile-section--roles">
+                        <h2 class="profile-section-title"><i class="fas fa-shield-alt"></i> Roles</h2>
+                        <div class="profile-roles">
+                            {% for group in profile_user.groups.all %}
+                            <span class="profile-role-badge">{{ group.name }}</span>
+                            {% empty %}
+                            <span class="profile-no-roles">Sin roles asignados</span>
+                            {% endfor %}
+                        </div>
+                    </section>
+                </div>
+            </main>
+        </div>
+    </div>
+</div>
+{% endblock %}

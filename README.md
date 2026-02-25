@@ -84,6 +84,17 @@ Los datos de la empresa en el PDF (nombre, RFC, dirección, teléfono, etc.) se 
 - **DEBUG**: debe ser `False` en producción (ya está en tu `.env`)
 - **Archivos MEDIA**: con `DEBUG=False`, Django no sirve archivos subidos. Configura tu servidor web (Nginx/Apache) o un CDN para servir la carpeta `media/`.
 
+## API REST
+
+Endpoints para integración con ERP/CRM (requiere autenticación):
+
+- `GET /api/quotes/` – Lista de cotizaciones (filtros: status, currency, customer, sales_user)
+- `GET /api/quotes/<id>/` – Detalle de cotización con items
+- `GET /api/customers/` – Lista de clientes
+- `GET /api/catalog/` – Catálogo de modelos de cámara
+
+Autenticación: sesión web o Basic Auth.
+
 ## Estructura
 
 Apps:
@@ -91,3 +102,4 @@ Apps:
 - `customers`: clientes y contactos
 - `catalog`: modelos de cámaras
 - `quotes`: cotizaciones y items
+- `api`: API REST

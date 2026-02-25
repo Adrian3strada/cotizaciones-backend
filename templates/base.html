@@ -4,6 +4,7 @@
 
 <head>
     <meta charset="utf-8">
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}Cotizaciones{% endblock %}</title>
     <link rel="icon" type="image/png" href="{% static 'img/image.png' %}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -28,7 +29,9 @@
             <ul class="navbar-nav ml-auto align-items-center">
                 {% if user.is_authenticated %}
                 <li class="nav-item nav-user-divider">
-                    <span class="nav-link nav-link-text">Hola, {{ user.get_full_name|default:user.username }}</span>
+                    <a href="{% url 'accounts:profile' %}" class="nav-link nav-link-text" title="Mi perfil">
+                        <i class="fas fa-user-circle mr-1"></i> Hola, {{ user.get_full_name|default:user.username }}
+                    </a>
                 </li>
                 <li class="nav-item">
                     <form method="post" action="{% url 'logout' %}" class="d-inline">
@@ -149,14 +152,29 @@
             });
             $("#appConfirmModalBtn").off("click.confirm").on("click.confirm", function () {
                 var form = $("#appConfirmModal").data("pendingForm");
+                var href = $("#appConfirmModal").data("pendingHref");
+                var method = ($("#appConfirmModal").data("pendingMethod") || "get").toLowerCase();
                 if (form) {
                     $("#appConfirmModal").data("pendingForm", null).modal("hide");
                     form.removeAttribute("data-confirm-message");
                     form.submit();
-                }
-                var href = $("#appConfirmModal").data("pendingHref");
-                if (href) {
-                    $("#appConfirmModal").data("pendingHref", null).modal("hide");
+                } else if (href && method === "post") {
+                    var postForm = document.createElement("form");
+                    postForm.method = "POST";
+                    postForm.action = href;
+                    var csrf = document.querySelector('meta[name="csrf-token"]');
+                    if (csrf && csrf.content) {
+                        var input = document.createElement("input");
+                        input.type = "hidden";
+                        input.name = "csrfmiddlewaretoken";
+                        input.value = csrf.content;
+                        postForm.appendChild(input);
+                    }
+                    document.body.appendChild(postForm);
+                    postForm.submit();
+                    $("#appConfirmModal").data("pendingHref", null).data("pendingMethod", null).modal("hide");
+                } else if (href) {
+                    $("#appConfirmModal").data("pendingHref", null).data("pendingMethod", null).modal("hide");
                     window.location.href = href;
                 }
             });
@@ -164,13 +182,27 @@
             // Modal de confirmación: enlaces con data-confirm-message
             $(document).on("click", "a[data-confirm-message]", function (e) {
                 e.preventDefault();
-                var msg = $(this).data("confirm-message");
-                var href = $(this).attr("href");
+                var $link = $(this);
+                var msg = $link.data("confirm-message");
+                var href = $link.attr("href");
+                var method = ($link.data("confirm-method") || "post").toLowerCase();
                 $("#appConfirmModalTitle").text("Confirmar");
                 $("#appConfirmModalBody").text(msg);
-                $("#appConfirmModal").data("pendingForm", null).data("pendingHref", href).modal("show");
+                $("#appConfirmModal").data("pendingForm", null).data("pendingHref", href).data("pendingMethod", method).modal("show");
             });
         });
+
+        // Atajo Ctrl+S para guardar formularios
+        $(document).on("keydown", function (e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+                e.preventDefault();
+                var $form = $("form:visible").filter(function () {
+                    return $(this).find('button[type="submit"], input[type="submit"]').length;
+                }).first();
+                if ($form.length) $form.submit();
+            }
+        });
+
     </script>
     {% block extra_js %}{% endblock %}
 </body>

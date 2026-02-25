@@ -35,11 +35,12 @@ else:
     ALLOWED_HOSTS = [
         "localhost",
         "127.0.0.1",
+        ".ngrok-free.app",
+        "070b-2806-103e-c-3f94-c4dd-15ca-650-5729.ngrok-free.app",
         "f82067d55692.ngrok-free.app",
         "8e4f3cd87ccf.ngrok-free.app",
         "f20c041eefef.ngrok-free.app",
         "6b73-187-195-124-21.ngrok-free.app",
-        
     ]
 
 _csrf_trusted_origins_env = os.environ.get("CSRF_TRUSTED_ORIGINS")
@@ -51,6 +52,7 @@ if _csrf_trusted_origins_env:
     ]
 else:
     CSRF_TRUSTED_ORIGINS = [
+        "https://070b-2806-103e-c-3f94-c4dd-15ca-650-5729.ngrok-free.app",
         "https://f82067d55692.ngrok-free.app",
         "https://f20c041eefef.ngrok-free.app",
         "https://6b73-187-195-124-21.ngrok-free.app",
@@ -66,10 +68,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'django_filters',
     'customers',
     'catalog',
     'accounts',
     'quotes.apps.QuotesConfig',
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -173,6 +178,17 @@ LOGIN_REDIRECT_URL = 'quotes:dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Django REST Framework
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 50,
+}
 
 # Motor del PDF de cotizaciones: "reportlab" (coordenadas en código) o "weasyprint" (template HTML)
 QUOTE_PDF_ENGINE = os.environ.get("QUOTE_PDF_ENGINE", "reportlab")

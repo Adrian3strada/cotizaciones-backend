@@ -46,6 +46,7 @@ urlpatterns = [
         template_name='registration/password_reset_info.html',
     ), name='password_reset'),
     path('admin/', admin.site.urls),
+    path('api/', include('api.urls')),
     path('', include('quotes.urls')),
     path('clientes/', include('customers.urls')),
     path('catalogo/', include('catalog.urls')),

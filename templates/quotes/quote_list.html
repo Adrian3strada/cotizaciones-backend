@@ -77,6 +77,13 @@
                 </div>
             </div>
             <div class="mt-3">
+                <span class="mr-2 text-muted small">Filtros rápidos:</span>
+                <a class="btn btn-sm btn-outline-secondary mr-1" href="?status=DRAFT">Mis pendientes</a>
+                <a class="btn btn-sm btn-outline-warning mr-1" href="?expiring_days=7">Por vencer (7 días)</a>
+                <a class="btn btn-sm btn-outline-info mr-1" href="?status=SENT">Enviadas</a>
+                <a class="btn btn-sm btn-outline-success mr-1" href="?status=ACCEPTED">Aceptadas</a>
+            </div>
+            <div class="mt-3">
                 <button type="submit" class="btn btn-primary">Filtrar</button>
                 <a class="btn btn-secondary" href="{% url 'quotes:list' %}">Limpiar</a>
                 <a class="btn btn-outline-success ml-2" href="{% url 'quotes:list_export' %}?{{ request.GET.urlencode }}"><i class="fas fa-file-csv mr-1"></i> Exportar CSV</a>
@@ -92,7 +99,7 @@
                 <tr>
                     <th><a href="?{% if filter_query_string_no_order %}{{ filter_query_string_no_order }}&{% endif %}order_by={% if current_order_by == 'quote_number' %}-quote_number{% else %}quote_number{% endif %}" class="text-reset"># {% if current_order_by == 'quote_number' %}<i class="fas fa-sort-up"></i>{% elif current_order_by == '-quote_number' %}<i class="fas fa-sort-down"></i>{% endif %}</a></th>
                     <th><a href="?{% if filter_query_string_no_order %}{{ filter_query_string_no_order }}&{% endif %}order_by={% if current_order_by == 'customer__name' %}-customer__name{% else %}customer__name{% endif %}" class="text-reset">Cliente {% if current_order_by == 'customer__name' %}<i class="fas fa-sort-up"></i>{% elif current_order_by == '-customer__name' %}<i class="fas fa-sort-down"></i>{% endif %}</a></th>
-                    <th>Vendedor</th>
+                    <th><a href="?{% if filter_query_string_no_order %}{{ filter_query_string_no_order }}&{% endif %}order_by={% if current_order_by == 'sales_user__username' %}-sales_user__username{% else %}sales_user__username{% endif %}" class="text-reset">Vendedor {% if current_order_by == 'sales_user__username' %}<i class="fas fa-sort-up"></i>{% elif current_order_by == '-sales_user__username' %}<i class="fas fa-sort-down"></i>{% endif %}</a></th>
                     <th>Estatus</th>
                     <th><a href="?{% if filter_query_string_no_order %}{{ filter_query_string_no_order }}&{% endif %}order_by={% if current_order_by == 'total' %}-total{% else %}total{% endif %}" class="text-reset">Total {% if current_order_by == 'total' %}<i class="fas fa-sort-up"></i>{% elif current_order_by == '-total' %}<i class="fas fa-sort-down"></i>{% endif %}</a></th>
                     <th><a href="?{% if filter_query_string_no_order %}{{ filter_query_string_no_order }}&{% endif %}order_by={% if current_order_by == 'valid_until' %}-valid_until{% else %}valid_until{% endif %}" class="text-reset">Vigencia {% if current_order_by == 'valid_until' %}<i class="fas fa-sort-up"></i>{% elif current_order_by == '-valid_until' %}<i class="fas fa-sort-down"></i>{% endif %}</a></th>

@@ -16,4 +16,5 @@ urlpatterns = [
     path("cotizaciones/<int:pk>/duplicar/", views.quote_duplicate, name="duplicate"),
     path("cotizaciones/<int:pk>/pdf/", views.quote_pdf, name="pdf"),
     path("reportes/", views.report_view, name="report"),
+    path("reportes/exportar/", views.report_export, name="report_export"),
 ]
