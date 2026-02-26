@@ -18,9 +18,12 @@ def main():
     # Crear superusuario si las variables están definidas
     username = os.environ.get("DJANGO_SUPERUSER_USERNAME")
     password = os.environ.get("DJANGO_SUPERUSER_PASSWORD")
+    email = os.environ.get("DJANGO_SUPERUSER_EMAIL") or "admin@sisconper.com"
 
     if username and password:
-        # Django lee DJANGO_SUPERUSER_* de las variables de entorno
+        # Django requiere email válido; usar default si no está definido
+        if not os.environ.get("DJANGO_SUPERUSER_EMAIL"):
+            os.environ["DJANGO_SUPERUSER_EMAIL"] = email
         run("python manage.py createsuperuser --noinput", check=False)
 
     os.execvp("gunicorn", [
