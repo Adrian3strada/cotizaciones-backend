@@ -57,6 +57,13 @@ if _railway_public and _railway_public not in ALLOWED_HOSTS:
 # Si estamos en Railway y sigue fallando, permitir cualquier host (solo en Railway)
 if os.environ.get("RAILWAY_PUBLIC_DOMAIN") and "*" not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append("*")
+# Contabo: dominio o IP del servidor (ej: cotizaciones.tudominio.com o 123.45.67.89)
+_contabo_domain = os.environ.get("CONTABO_DOMAIN")
+if _contabo_domain:
+    for d in _contabo_domain.split(","):
+        d = d.strip()
+        if d and d not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(d)
 
 _csrf_trusted_origins_env = os.environ.get("CSRF_TRUSTED_ORIGINS")
 if _csrf_trusted_origins_env:
@@ -77,6 +84,14 @@ else:
 _railway_domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
 if _railway_domain:
     CSRF_TRUSTED_ORIGINS = list(CSRF_TRUSTED_ORIGINS) + [f"https://{_railway_domain}"]
+# Contabo: añadir orígenes HTTPS para el dominio del servidor
+if _contabo_domain:
+    for d in _contabo_domain.split(","):
+        d = d.strip()
+        if d:
+            _origin = f"https://{d}"
+            if _origin not in CSRF_TRUSTED_ORIGINS:
+                CSRF_TRUSTED_ORIGINS = list(CSRF_TRUSTED_ORIGINS) + [_origin]
 
 
 # Application definition
@@ -138,6 +153,13 @@ if _database_url:
     _db_name = _parsed.path.lstrip("/")
     if _parsed.scheme == "postgres":
         _parsed = _parsed._replace(scheme="postgresql")
+    # Contabo: si PostgreSQL está en localhost, usar sslmode=disable (o DATABASE_SSL_MODE)
+    _db_host = (_parsed.hostname or "").lower()
+    _ssl_mode = os.environ.get("DATABASE_SSL_MODE")
+    if _ssl_mode is None and _db_host in ("localhost", "127.0.0.1", ""):
+        _ssl_mode = "disable"
+    elif _ssl_mode is None:
+        _ssl_mode = "require"
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
@@ -146,7 +168,7 @@ if _database_url:
             "PASSWORD": _parsed.password,
             "HOST": _parsed.hostname,
             "PORT": _parsed.port or "5432",
-            "OPTIONS": {"sslmode": "require"},
+            "OPTIONS": {"sslmode": _ssl_mode},
         }
     }
 elif os.environ.get("POSTGRES_DB") or os.environ.get("PGDATABASE"):

@@ -4,8 +4,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db import models, transaction
 from django.db.models import Count, DecimalField, Q, Sum, Value
-from django.db.models.functions import Coalesce
-from django.db.models.functions import ExtractMonth
+from django.db.models.functions import Coalesce, ExtractMonth, ExtractYear
 import csv
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -18,6 +17,8 @@ from django.views.generic import DetailView, ListView, TemplateView
 import json
 from decimal import Decimal
 from pathlib import Path
+
+from dateutil.relativedelta import relativedelta
 
 import logging
 from django.db.models.signals import post_delete, post_save
@@ -104,10 +105,14 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             "Noviembre",
             "Diciembre",
         ]
+        start_six_months = current_date - relativedelta(months=5)
         monthly_totals = (
-            queryset.filter(issue_date__year=current_date.year)
-            .annotate(month=ExtractMonth("issue_date"))
-            .values("month")
+            queryset.filter(
+                issue_date__gte=start_six_months.replace(day=1),
+                issue_date__lte=current_date,
+            )
+            .annotate(year=ExtractYear("issue_date"), month=ExtractMonth("issue_date"))
+            .values("year", "month")
             .annotate(
                 total=Coalesce(
                     Sum("total"),
@@ -115,16 +120,16 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                     output_field=DecimalField(max_digits=14, decimal_places=2),
                 )
             )
-            .order_by("month")
+            .order_by("year", "month")
         )
-        monthly_map = {row["month"]: row["total"] for row in monthly_totals}
+        monthly_map = {(row["year"], row["month"]): row["total"] for row in monthly_totals}
         last_months = []
         for offset in range(5, -1, -1):
-            month_value = ((current_date.month - offset - 1) % 12) + 1
+            d = current_date - relativedelta(months=offset)
             last_months.append(
                 {
-                    "label": month_labels[month_value - 1][:3],
-                    "total": monthly_map.get(month_value, 0),
+                    "label": month_labels[d.month - 1][:3],
+                    "total": monthly_map.get((d.year, d.month), 0),
                 }
             )
         max_total = max((item["total"] for item in last_months), default=0) or 1
@@ -587,30 +592,38 @@ def quote_pdf(request, pk):
         except ModuleNotFoundError:
             use_reportlab = False
     if not use_reportlab:
-        from weasyprint import HTML
-        logo_path = finders.find("img/logo.png")
-        header_right_path = finders.find("img/quote_header_right.png") or finders.find("img/quote_header_rigth.png")
-        logo_uri = _build_file_uri(logo_path)
-        header_right_uri = _build_file_uri(header_right_path)
-        pdf_context = {
-            "quote": quote,
-            "vigencia_texto": vigencia_texto,
-            "issue_date_formatted": issue_date_formatted,
-            "company_name": company.get("name", "Sistemas de Conteo de Personas."),
-            "company_website": company.get("website", "www.sisconper.com"),
-            "company_street": company.get("street", "Blvd. Paseo de la República No. 13020 Int. 1307"),
-            "company_colony": company.get("colony", "Col. Juriquilla, Querétaro, Qro."),
-            "company_postal_code": company.get("postal_code", "C.P. 76230"),
-            "company_phone": company.get("phone", "(442) 245 7000"),
-            "company_mobile": company.get("mobile", ""),
-            "company_rfc": company.get("rfc", "SCP070410C43"),
-            "company_email": company.get("email", "info@sisconper.com"),
-            "company_logo_uri": logo_uri,
-            "header_right_uri": header_right_uri,
-        }
-        html_string = render_to_string("quotes/quote_pdf.html", pdf_context)
-        pdf_bytes = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
-        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        try:
+            from weasyprint import HTML
+            logo_path = finders.find("img/logo.png")
+            header_right_path = finders.find("img/quote_header_right.png") or finders.find("img/quote_header_rigth.png")
+            logo_uri = _build_file_uri(logo_path)
+            header_right_uri = _build_file_uri(header_right_path)
+            pdf_context = {
+                "quote": quote,
+                "vigencia_texto": vigencia_texto,
+                "issue_date_formatted": issue_date_formatted,
+                "company_name": company.get("name", "Sistemas de Conteo de Personas."),
+                "company_website": company.get("website", "www.sisconper.com"),
+                "company_street": company.get("street", "Blvd. Paseo de la República No. 13020 Int. 1307"),
+                "company_colony": company.get("colony", "Col. Juriquilla, Querétaro, Qro."),
+                "company_postal_code": company.get("postal_code", "C.P. 76230"),
+                "company_phone": company.get("phone", "(442) 245 7000"),
+                "company_mobile": company.get("mobile", ""),
+                "company_rfc": company.get("rfc", "SCP070410C43"),
+                "company_email": company.get("email", "info@sisconper.com"),
+                "company_logo_uri": logo_uri,
+                "header_right_uri": header_right_uri,
+            }
+            html_string = render_to_string("quotes/quote_pdf.html", pdf_context)
+            pdf_bytes = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
+            response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        except Exception as e:
+            logger.exception("Error generando PDF con WeasyPrint: %s", e)
+            messages.error(
+                request,
+                "No se pudo generar el PDF. Por favor, intente de nuevo o contacte al administrador.",
+            )
+            return redirect("quotes:detail", pk=pk)
 
     filename_number = quote.quote_number
     if filename_number.startswith("COT-"):
@@ -636,12 +649,14 @@ def report_view(request):
     sales_user_id = request.GET.get("sales_user")
     customer_id = request.GET.get("customer")
 
+    if date_from and date_to and date_from > date_to:
+        messages.error(request, "La fecha desde debe ser menor o igual a la fecha hasta.")
+        date_from = None
+        date_to = None
     if date_from:
         queryset = queryset.filter(issue_date__gte=date_from)
     if date_to:
         queryset = queryset.filter(issue_date__lte=date_to)
-    if date_from and date_to and date_from > date_to:
-        messages.error(request, "La fecha desde debe ser menor o igual a la fecha hasta.")
     if sales_user_id:
         try:
             sales_user_id = int(sales_user_id)
@@ -748,8 +763,7 @@ def report_view(request):
             ),
             "sales_users": (
                 get_user_model()
-                .objects.filter(quote__in=queryset)
-                .distinct()
+                .objects.filter(pk__in=queryset.values_list("sales_user_id", flat=True).distinct())
                 .values_list("id", "username")
                 .order_by("username")
             ),
@@ -772,6 +786,9 @@ def _get_report_queryset(request):
     date_to = parse_date(request.GET.get("date_to") or "")
     sales_user_id = request.GET.get("sales_user")
     customer_id = request.GET.get("customer")
+    if date_from and date_to and date_from > date_to:
+        date_from = None
+        date_to = None
     if date_from:
         queryset = queryset.filter(issue_date__gte=date_from)
     if date_to:

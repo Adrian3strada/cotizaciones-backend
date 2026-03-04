@@ -293,12 +293,13 @@ class Quote(models.Model):
         self.subtotal = subtotal
         self.tax_amount = tax_amount
         self.total = total
-        Quote.objects.filter(pk=self.pk).update(
-            subtotal=self.subtotal,
-            special_discount_amount=self.special_discount_amount,
-            tax_amount=self.tax_amount,
-            total=self.total,
-        )
+        if self.pk is not None:
+            Quote.objects.filter(pk=self.pk).update(
+                subtotal=self.subtotal,
+                special_discount_amount=self.special_discount_amount,
+                tax_amount=self.tax_amount,
+                total=self.total,
+            )
 
 
 class QuoteItem(models.Model):

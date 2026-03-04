@@ -112,7 +112,10 @@ class QuoteListSerializer(serializers.ModelSerializer):
 class QuoteDetailSerializer(serializers.ModelSerializer):
     items = QuoteItemSerializer(many=True, read_only=True)
     customer_name = serializers.CharField(source="customer.name", read_only=True)
-    contact_name = serializers.CharField(source="contact.full_name", read_only=True)
+    contact_name = serializers.SerializerMethodField()
+
+    def get_contact_name(self, obj):
+        return obj.contact.full_name if obj.contact else None
     sales_user_name = serializers.CharField(source="sales_user.username", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
 
