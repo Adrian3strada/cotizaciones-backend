@@ -24,7 +24,7 @@ class CustomerForm(forms.ModelForm):
 
     def clean_website(self):
         value = self.cleaned_data.get("website")
-        if value and not value.startswith(("http://", "https://")):
+        if value and "://" not in value:
             return "https://" + value
         return value
 

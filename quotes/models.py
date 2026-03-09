@@ -113,7 +113,11 @@ class Quote(models.Model):
         blank=True,
     )
     notes = models.TextField("Observaciones", blank=True)
-    terms = models.TextField("Términos", blank=True)
+    terms = models.TextField(
+        "Términos",
+        blank=True,
+        default="Entrega 10-15 días hábiles. Pago 50% anticipo, 50% contra entrega. Garantía 1 año.",
+    )
     created_at = models.DateTimeField("Creado", auto_now_add=True)
     updated_at = models.DateTimeField("Actualizado", auto_now=True)
 

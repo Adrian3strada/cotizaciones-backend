@@ -41,12 +41,7 @@ class QuoteForm(forms.ModelForm):
             "instalacion_monto": forms.NumberInput(attrs={"min": 0, "step": "0.01", "placeholder": "0"}),
             "inyector_poe_monto": forms.NumberInput(attrs={"min": 0, "step": "0.01", "placeholder": "0"}),
             "poe_monto": forms.NumberInput(attrs={"min": 0, "step": "0.01", "placeholder": "0"}),
-            "terms": forms.Textarea(
-                attrs={
-                    "rows": 3,
-                    "placeholder": "Ej: Entrega 10-15 días hábiles. Pago 50% anticipo, 50% contra entrega. Garantía 1 año.",
-                }
-            ),
+            "terms": forms.Textarea(attrs={"rows": 3}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -56,6 +51,7 @@ class QuoteForm(forms.ModelForm):
             today = timezone.localdate()
             self.fields["issue_date"].initial = today
             self.fields["valid_until"].initial = today + timedelta(days=30)
+            self.fields["terms"].initial = "Entrega 10-15 días hábiles. Pago 50% anticipo, 50% contra entrega. Garantía 1 año."
         self.fields["special_discount_percent"].required = False
         self.fields["cableado_monto"].required = False
         self.fields["instalacion_monto"].required = False
@@ -81,9 +77,15 @@ class QuoteForm(forms.ModelForm):
         cleaned_data = super().clean()
         customer = cleaned_data.get("customer")
         contact = cleaned_data.get("contact")
+        issue_date = cleaned_data.get("issue_date")
         valid_until = cleaned_data.get("valid_until")
         if contact and customer and contact.customer_id != customer.id:
             self.add_error("contact", "El contacto debe pertenecer al cliente seleccionado.")
+        if issue_date and valid_until and issue_date > valid_until:
+            self.add_error(
+                "valid_until",
+                "La vigencia debe ser posterior o igual a la fecha de emisión.",
+            )
         if valid_until and valid_until < timezone.localdate():
             self.add_error(
                 "valid_until",

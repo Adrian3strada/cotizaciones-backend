@@ -56,6 +56,10 @@
                         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                         {% endif %}
                         {{ field }}
+                        {% if field.name == 'contact' %}
+                        <small class="form-text text-muted" id="contact-load-status" aria-live="polite"></small>
+                        <div class="text-danger small" id="contact-fetch-error" role="alert" style="display:none;"></div>
+                        {% endif %}
                         {% if field.help_text %}
                         <small class="form-text text-muted">{{ field.help_text }}</small>
                         {% endif %}
@@ -280,22 +284,38 @@
         }
 
         async function loadContacts(customerId) {
+            const statusEl = document.getElementById("contact-load-status");
+            const errorEl = document.getElementById("contact-fetch-error");
+            if (statusEl) statusEl.textContent = "";
+            if (errorEl) { errorEl.textContent = ""; errorEl.style.display = "none"; }
             if (!customerId || !contactSelect) {
                 setContactOptions([], null);
                 return;
             }
-            const baseUrl = "{% url 'customers:contacts' 0 %}".replace("/0/", `/${customerId}/`);
-            const response = await fetch(baseUrl, {
-                headers: { "X-Requested-With": "XMLHttpRequest" },
-                credentials: "same-origin",
-            });
-            if (!response.ok) {
+            if (statusEl) statusEl.textContent = "Cargando contactos…";
+            if (contactSelect) contactSelect.disabled = true;
+            try {
+                const baseUrl = "{% url 'customers:contacts' 0 %}".replace("/0/", `/${customerId}/`);
+                const response = await fetch(baseUrl, {
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    credentials: "same-origin",
+                });
+                if (!response.ok) {
+                    setContactOptions([], null);
+                    if (errorEl) { errorEl.textContent = "No se pudieron cargar los contactos. Intenta de nuevo."; errorEl.style.display = "block"; }
+                    return;
+                }
+                const data = await response.json();
+                const selectedId = contactSelect.value;
+                setContactOptions(data.contacts || [], selectedId);
+                if (statusEl) statusEl.textContent = "";
+            } catch (err) {
                 setContactOptions([], null);
-                return;
+                if (errorEl) { errorEl.textContent = "Error al cargar contactos. Verifica tu conexión."; errorEl.style.display = "block"; }
+            } finally {
+                if (statusEl) statusEl.textContent = "";
+                if (contactSelect) contactSelect.disabled = false;
             }
-            const data = await response.json();
-            const selectedId = contactSelect.value;
-            setContactOptions(data.contacts || [], selectedId);
         }
 
         if (customerSelect) {

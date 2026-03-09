@@ -28,10 +28,12 @@
             $("input[name='password']").attr("placeholder", "password");
 
             $(".auth-toggle-password").on("click", function () {
-                const $input = $(this).closest(".input-group").find("input");
+                const $btn = $(this);
+                const $input = $btn.closest(".input-group").find("input");
                 const isPassword = $input.attr("type") === "password";
                 $input.attr("type", isPassword ? "text" : "password");
-                $(this).find("i").toggleClass("fa-eye fa-eye-slash");
+                $btn.find("i").toggleClass("fa-eye fa-eye-slash");
+                $btn.attr("aria-label", isPassword ? "Ocultar contraseña" : "Mostrar contraseña");
             });
         });
     </script>

@@ -73,6 +73,25 @@
                         </div>
                     </section>
                 </div>
+
+                <section class="profile-section profile-section--recent">
+                    <h2 class="profile-section-title"><i class="fas fa-file-invoice-dollar"></i> Cotizaciones recientes</h2>
+                    <div class="profile-recent-list">
+                        {% for quote in recent_quotes %}
+                        <a href="{% url 'quotes:detail' quote.pk %}" class="profile-recent-item">
+                            <span class="profile-recent-number">{{ quote.quote_number }}</span>
+                            <span class="profile-recent-customer">{{ quote.customer.name }}</span>
+                            <span class="profile-recent-status profile-recent-status--{{ quote.status|lower }}">{{ quote.get_status_display }}</span>
+                            <span class="profile-recent-total">{{ quote.total }} {{ quote.currency }}</span>
+                        </a>
+                        {% empty %}
+                        <p class="profile-recent-empty">No hay cotizaciones recientes.</p>
+                        {% endfor %}
+                    </div>
+                    {% if recent_quotes %}
+                    <a href="{% url 'quotes:list' %}" class="profile-recent-link">Ver todas las cotizaciones <i class="fas fa-arrow-right"></i></a>
+                    {% endif %}
+                </section>
             </main>
         </div>
     </div>

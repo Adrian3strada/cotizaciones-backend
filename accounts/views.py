@@ -15,6 +15,12 @@ class ProfileView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["profile_user"] = self.request.user
+        from quotes.models import Quote
+        context["recent_quotes"] = (
+            Quote.objects.filter(sales_user=self.request.user)
+            .select_related("customer")
+            .order_by("-created_at")[:8]
+        )
         return context
 
 

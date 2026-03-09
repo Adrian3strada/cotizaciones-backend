@@ -169,14 +169,14 @@
                         <th>Total (productos)</th>
                         <td class="text-right">{{ object.products_total_after_discount }} {{ object.currency }}</td>
                     </tr>
-                    {% if object.cableado and object.cableado_monto or object.instalacion and object.instalacion_monto or object.inyector_poe and object.inyector_poe_monto or object.poe and object.poe_monto %}
+                    {% if object.get_optional_services_total %}
                     <tr>
                         <th>Total (opcionales)</th>
                         <td class="text-right">{{ object.get_optional_services_total }} {{ object.currency }}</td>
                     </tr>
                     {% endif %}
                     <tr>
-                        <th>Total</th>
+                        <th>Subtotal (antes de IVA)</th>
                         <td class="text-right">{{ object.subtotal_after_discount }} {{ object.currency }}</td>
                     </tr>
                     <tr>

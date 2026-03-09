@@ -26,16 +26,16 @@
         <form method="get">
             <div class="row">
                 <div class="col-md-3">
-                    <label>Desde</label>
-                    <input type="date" name="date_from" value="{{ request.GET.date_from }}">
+                    <label for="report-date-from">Desde</label>
+                    <input type="date" id="report-date-from" name="date_from" value="{{ request.GET.date_from }}" class="form-control">
                 </div>
                 <div class="col-md-3">
-                    <label>Hasta</label>
-                    <input type="date" name="date_to" value="{{ request.GET.date_to }}">
+                    <label for="report-date-to">Hasta</label>
+                    <input type="date" id="report-date-to" name="date_to" value="{{ request.GET.date_to }}" class="form-control">
                 </div>
                 <div class="col-md-3">
-                    <label>Cliente</label>
-                    <select name="customer">
+                    <label for="report-customer">Cliente</label>
+                    <select name="customer" id="report-customer" class="form-control">
                         <option value="">Todos</option>
                         {% for id,name in customers %}
                         <option value="{{ id }}" {% if request.GET.customer == id|stringformat:"s" %}selected{% endif %}>
@@ -44,8 +44,8 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label>Vendedor</label>
-                    <select name="sales_user">
+                    <label for="report-sales-user">Vendedor</label>
+                    <select name="sales_user" id="report-sales-user" class="form-control">
                         <option value="">Todos</option>
                         {% for id,username in sales_users %}
                         <option value="{{ id }}" {% if request.GET.sales_user == id|stringformat:"s" %}selected{% endif %}>{{ username }}</option>

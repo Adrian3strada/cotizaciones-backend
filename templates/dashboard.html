@@ -122,8 +122,13 @@
                     <div class="visual-panel visual-panel--right-top">
                         <div class="visual-panel-header">Cliente destacado</div>
                         <div class="visual-metric">
-                            <span>{{ top_customer.customer__name|default:"Sin datos" }}</span>
+                            {% if top_customer %}
+                            <span>{{ top_customer.customer__name }}</span>
                             <strong>{{ top_customer.total|default_if_none:"0.00"|floatformat:2 }}</strong>
+                            {% else %}
+                            <span>Sin datos</span>
+                            <strong>0.00</strong>
+                            {% endif %}
                         </div>
                         <div class="visual-metric-row">
                             <div>
@@ -141,7 +146,7 @@
                         <div class="visual-panel-header">Vendedores</div>
                         <div class="visual-metric">
                             <span>Top vendedor</span>
-                            <strong>{{ top_seller.sales_user__username|default:"Sin datos" }}</strong>
+                            <strong>{% if top_seller %}{{ top_seller.sales_user__username }}{% else %}Sin datos{% endif %}</strong>
                         </div>
                         <div class="radar-chart">
                             <span>Enviadas {{ sent_count }}</span>
