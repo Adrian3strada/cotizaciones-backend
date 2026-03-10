@@ -1,8 +1,15 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
+{{ chart_models_labels|json_script:"chart-models-labels" }}
+{{ chart_models_data|json_script:"chart-models-data" }}
+{{ chart_status_labels|json_script:"chart-status-labels" }}
+{{ chart_status_data|json_script:"chart-status-data" }}
+{{ chart_months_labels|json_script:"chart-months-labels" }}
+{{ chart_months_data|json_script:"chart-months-data" }}
 <div class="dashboard-page">
     <div class="dashboard-hero">
         <div>
@@ -70,7 +77,10 @@
                             <span>Clientes con cotización</span>
                             <strong>{{ customer_count }}</strong>
                         </div>
-                        <div class="visual-donut" data-label="{{ active_customer_rate }}% activos"></div>
+                        <div class="chart-container chart-container--donut">
+                            <canvas id="chartCustomers" aria-label="Gráfico de clientes activos"></canvas>
+                            <span class="chart-center-label">{{ active_customer_rate }}% activos</span>
+                        </div>
                     </div>
 
                     <div class="visual-panel visual-panel--left-mid">
@@ -79,18 +89,16 @@
                             <span>Top por cantidad</span>
                             <strong>{{ top_models|length }}</strong>
                         </div>
-                        <div class="chart-bars">
-                            {% for model in top_models %}
-                            <span style="height: {{ model.pct }}%" title="{{ model.camera_model__model_code }}"></span>
-                            {% empty %}
-                            <span style="height: 10%"></span>
-                            {% endfor %}
+                        <div class="chart-container chart-container--bar">
+                            <canvas id="chartModels" aria-label="Gráfico de modelos más vendidos"></canvas>
                         </div>
                     </div>
 
                     <div class="visual-panel visual-panel--left-bottom">
                         <div class="visual-panel-header">Estado de cotizaciones</div>
-                        <div class="chart-line"></div>
+                        <div class="chart-container chart-container--pie">
+                            <canvas id="chartStatus" aria-label="Gráfico por estado de cotizaciones"></canvas>
+                        </div>
                         <div class="chart-legend">
                             <span><i></i> Enviadas {{ sent_count }}</span>
                             <span><i class="secondary"></i> Aceptadas {{ accepted_count }}</span>
@@ -158,10 +166,8 @@
 
                     <div class="visual-panel visual-panel--right-bottom">
                         <div class="visual-panel-header">Últimos 6 meses</div>
-                        <div class="chart-bars chart-bars--mini">
-                            {% for month in last_months %}
-                            <span style="height: {{ month.pct }}%" title="{{ month.label }}"></span>
-                            {% endfor %}
+                        <div class="chart-container chart-container--bar-sm">
+                            <canvas id="chartMonths" aria-label="Gráfico de cotizaciones por mes"></canvas>
                         </div>
                     </div>
 
@@ -255,4 +261,142 @@
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function() {
+    var elLabels = document.getElementById('chart-models-labels');
+    if (!elLabels) return;
+    var chartColors = {
+        primary: 'rgba(72, 146, 255, 0.9)',
+        secondary: 'rgba(53, 240, 183, 0.9)',
+        accent: 'rgba(24, 169, 153, 0.9)',
+        muted: 'rgba(86, 127, 175, 0.6)',
+        palette: ['#4892ff', '#35f0b7', '#18a999', '#5fd1ff', '#2f6dfd', '#66f2d7']
+    };
+
+    var modelsLabels = JSON.parse(document.getElementById('chart-models-labels').textContent);
+    var modelsData = JSON.parse(document.getElementById('chart-models-data').textContent);
+    var statusLabels = JSON.parse(document.getElementById('chart-status-labels').textContent);
+    var statusData = JSON.parse(document.getElementById('chart-status-data').textContent);
+    var monthsLabels = JSON.parse(document.getElementById('chart-months-labels').textContent);
+    var monthsData = JSON.parse(document.getElementById('chart-months-data').textContent);
+    if (!modelsLabels.length) modelsLabels = ['Sin datos'];
+    if (!modelsData.length) modelsData = [0];
+
+    // Donut: clientes activos
+    var ctxCustomers = document.getElementById('chartCustomers');
+    if (ctxCustomers) {
+        var activeRate = {{ active_customer_rate|default:0 }};
+        new Chart(ctxCustomers, {
+            type: 'doughnut',
+            data: {
+                labels: ['Activos', 'Inactivos'],
+                datasets: [{
+                    data: [activeRate, 100 - activeRate],
+                    backgroundColor: [chartColors.primary, 'rgba(86, 127, 175, 0.25)'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                cutout: '70%',
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    // Bar: modelos más vendidos
+    var ctxModels = document.getElementById('chartModels');
+    if (ctxModels) {
+        new Chart(ctxModels, {
+            type: 'bar',
+            data: {
+                labels: modelsLabels,
+                datasets: [{
+                    label: 'Cantidad',
+                    data: modelsData,
+                    backgroundColor: chartColors.primary,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                indexAxis: 'y',
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(86, 127, 175, 0.15)' },
+                        ticks: { color: 'rgba(234, 242, 255, 0.8)' }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { color: 'rgba(234, 242, 255, 0.8)', maxRotation: 0 }
+                    }
+                }
+            }
+        });
+    }
+
+    // Pie: estado de cotizaciones
+    var ctxStatus = document.getElementById('chartStatus');
+    if (ctxStatus) {
+        new Chart(ctxStatus, {
+            type: 'doughnut',
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    data: statusData,
+                    backgroundColor: chartColors.palette,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: 'rgba(234, 242, 255, 0.85)', boxWidth: 12 }
+                    }
+                }
+            }
+        });
+    }
+
+    // Bar: últimos 6 meses
+    var ctxMonths = document.getElementById('chartMonths');
+    if (ctxMonths) {
+        new Chart(ctxMonths, {
+            type: 'bar',
+            data: {
+                labels: monthsLabels,
+                datasets: [{
+                    label: 'Total',
+                    data: monthsData,
+                    backgroundColor: chartColors.accent,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: 'rgba(234, 242, 255, 0.8)' }
+                    },
+                    y: {
+                        grid: { color: 'rgba(86, 127, 175, 0.15)' },
+                        ticks: { color: 'rgba(234, 242, 255, 0.8)' }
+                    }
+                }
+            }
+        });
+    }
+})();
+</script>
 {% endblock %}

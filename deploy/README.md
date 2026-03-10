@@ -69,17 +69,10 @@ Después del despliegue inicial, para actualizar:
 
 ```bash
 cd /var/www/cotizaciones
-git pull
-./venv/bin/pip install -r requirements.txt
-./venv/bin/python manage.py collectstatic --noinput
-sudo systemctl restart cotizaciones
-```
-
-O usa el script de actualización:
-
-```bash
 ./deploy/update.sh
 ```
+
+El script `update.sh` ejecuta: `git pull`, `pip install`, `collectstatic`, **migraciones** y reinicia el servicio.
 
 ## Comandos útiles
 
@@ -94,6 +87,11 @@ O usa el script de actualización:
 
 En `.env` o en el servicio systemd:
 
+- `SECRET_KEY`: Obligatorio en producción
 - `CONTABO_DOMAIN`: Dominio o IP (se añade a ALLOWED_HOSTS y CSRF_TRUSTED_ORIGINS)
 - `DATABASE_SSL_MODE`: `disable` si PostgreSQL está en localhost (por defecto se detecta)
 - `ALLOWED_HOSTS`: Lista separada por comas si necesitas varios dominios
+
+## Archivos MEDIA y tareas cron
+
+Ver la sección correspondiente en el README principal del proyecto.

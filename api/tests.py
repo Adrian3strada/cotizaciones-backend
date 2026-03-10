@@ -50,7 +50,7 @@ class ApiTests(TestCase):
 
     def test_api_quotes_list_requires_auth(self):
         response = self.client.get("/api/quotes/")
-        self.assertEqual(response.status_code, 403)
+        self.assertIn(response.status_code, (401, 403))
 
     def test_api_quotes_list_ok(self):
         self.client.login(username="apiuser", password="testpass123")

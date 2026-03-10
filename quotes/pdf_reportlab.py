@@ -103,9 +103,8 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
     from django.conf import settings as django_settings
 
     logo_path = finders.find("img/logo.png")
-    hero_path = (
-        finders.find("img/quote_header_right.png")
-        or finders.find("img/quote_header_rigth.png")
+    hero_path = finders.find(
+        getattr(django_settings, "QUOTE_PDF_HEADER_IMAGE", "img/quote_header_right.png")
     )
 
     buf = BytesIO()

@@ -31,6 +31,15 @@ from quotes.forms import QuoteForm, QuoteItemFormSet
 from quotes.models import Quote, QuoteItem
 from quotes.signals import quote_item_deleted, quote_item_saved
 
+
+def _get_quote_for_user(request, pk):
+    """Obtiene la cotización por pk; 404 si no existe o el usuario no tiene acceso."""
+    qs = Quote.objects.all()
+    if not request.user.is_superuser:
+        qs = qs.filter(sales_user=request.user)
+    return get_object_or_404(qs, pk=pk)
+
+
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = "dashboard.html"
 
@@ -136,20 +145,36 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         for item in last_months:
             item["pct"] = round((float(item["total"]) / float(max_total)) * 100)
 
-        # Comparativa año anterior
+        # Comparativa año anterior (aceptadas vs aceptadas)
         prev_year = current_date.year - 1
-        prev_year_total = queryset.filter(issue_date__year=prev_year).aggregate(
+        prev_year_accepted = queryset.filter(
+            status=Quote.STATUS_ACCEPTED, issue_date__year=prev_year
+        ).aggregate(
             total=Coalesce(Sum("total"), Value(0), output_field=DecimalField(max_digits=14, decimal_places=2))
         )["total"]
         year_vs_prev = None
-        if prev_year_total and float(prev_year_total) > 0 and accepted_total:
-            diff_pct = round(((float(accepted_total) - float(prev_year_total)) / float(prev_year_total)) * 100, 1)
-            year_vs_prev = {"prev_total": prev_year_total, "diff_pct": diff_pct}
+        if prev_year_accepted and float(prev_year_accepted) > 0 and accepted_total:
+            diff_pct = round(((float(accepted_total) - float(prev_year_accepted)) / float(prev_year_accepted)) * 100, 1)
+            year_vs_prev = {"prev_total": prev_year_accepted, "diff_pct": diff_pct}
 
         customer_count = customer_queryset.count()
         active_customer_rate = 0
         if Customer.objects.exists():
             active_customer_rate = round((customer_count / Customer.objects.count()) * 100)
+
+        # Datos para Chart.js
+        chart_status_labels = ["Borrador", "Enviadas", "Aceptadas", "Rechazadas", "Expiradas"]
+        chart_status_data = [
+            totals["draft_count"],
+            totals["sent_count"],
+            totals["accepted_count"],
+            totals["rejected_count"],
+            totals["expired_count"],
+        ]
+        chart_models_labels = [m.get("camera_model__model_code") or m.get("camera_model__name") or "-" for m in top_models]
+        chart_models_data = [float(m["total_qty"]) for m in top_models]
+        chart_months_labels = [m["label"] for m in last_months]
+        chart_months_data = [float(m["total"]) for m in last_months]
 
         context.update(
             {
@@ -171,6 +196,12 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 "year_vs_prev": year_vs_prev,
                 "active_customer_rate": active_customer_rate,
                 "today_label": current_date.strftime("%d/%m/%Y"),
+                "chart_status_labels": chart_status_labels,
+                "chart_status_data": chart_status_data,
+                "chart_models_labels": chart_models_labels,
+                "chart_models_data": chart_models_data,
+                "chart_months_labels": chart_months_labels,
+                "chart_months_data": chart_months_data,
             }
         )
         return context
@@ -289,16 +320,34 @@ def _build_file_uri(path_value):
     return Path(path_value).resolve().as_uri()
 
 
+def _apply_common_quote_filters(queryset, request, date_from=None, date_to=None):
+    """Aplica filtros comunes: usuario, fechas, customer_id, sales_user_id.
+    date_from/date_to opcionales: si no se pasan, se leen de request.GET."""
+    if not request.user.is_superuser:
+        queryset = queryset.filter(sales_user=request.user)
+    if date_from is None:
+        date_from = parse_date(request.GET.get("date_from") or "")
+    if date_to is None:
+        date_to = parse_date(request.GET.get("date_to") or "")
+    if date_from:
+        queryset = queryset.filter(issue_date__gte=date_from)
+    if date_to:
+        queryset = queryset.filter(issue_date__lte=date_to)
+    for param, filter_key in [("customer", "customer_id"), ("sales_user", "sales_user_id")]:
+        val = request.GET.get(param)
+        if val:
+            try:
+                queryset = queryset.filter(**{filter_key: int(val)})
+            except (TypeError, ValueError):
+                pass
+    return queryset
+
+
 def _get_quote_list_queryset(request):
     """Queryset filtrado para lista y export CSV (misma lógica)."""
     queryset = Quote.objects.select_related("customer", "sales_user")
-    if not request.user.is_superuser:
-        queryset = queryset.filter(sales_user=request.user)
+    queryset = _apply_common_quote_filters(queryset, request)
     status = request.GET.get("status")
-    customer_id = request.GET.get("customer")
-    sales_user_id = request.GET.get("sales_user")
-    date_from = parse_date(request.GET.get("date_from") or "")
-    date_to = parse_date(request.GET.get("date_to") or "")
     search = (request.GET.get("q") or "").strip()
     if search:
         queryset = queryset.filter(
@@ -306,20 +355,6 @@ def _get_quote_list_queryset(request):
         )
     if status:
         queryset = queryset.filter(status=status)
-    if customer_id:
-        try:
-            queryset = queryset.filter(customer_id=int(customer_id))
-        except (TypeError, ValueError):
-            pass
-    if sales_user_id:
-        try:
-            queryset = queryset.filter(sales_user_id=int(sales_user_id))
-        except (TypeError, ValueError):
-            pass
-    if date_from:
-        queryset = queryset.filter(issue_date__gte=date_from)
-    if date_to:
-        queryset = queryset.filter(issue_date__lte=date_to)
     expiring_days = request.GET.get("expiring_days")
     if expiring_days:
         try:
@@ -414,10 +449,7 @@ def quote_create(request):
 @login_required
 @permission_required("quotes.change_quote", raise_exception=True)
 def quote_update(request, pk):
-    quote = get_object_or_404(Quote, pk=pk)
-    if not request.user.is_superuser and quote.sales_user != request.user:
-        messages.error(request, "No tienes permiso para editar esta cotización.")
-        return redirect("quotes:detail", pk=pk)
+    quote = _get_quote_for_user(request, pk)
     if request.method == "POST":
         form = QuoteForm(request.POST, instance=quote)
         formset = QuoteItemFormSet(request.POST, instance=quote)
@@ -470,10 +502,7 @@ def quote_update(request, pk):
 @permission_required("quotes.change_quote", raise_exception=True)
 @require_POST
 def quote_send(request, pk):
-    quote = get_object_or_404(Quote, pk=pk)
-    if not request.user.is_superuser and quote.sales_user != request.user:
-        messages.error(request, "No tienes permiso para enviar esta cotización.")
-        return redirect("quotes:detail", pk=pk)
+    quote = _get_quote_for_user(request, pk)
     if quote.status != Quote.STATUS_DRAFT:
         messages.error(request, "Solo puedes enviar cotizaciones en borrador.")
         return redirect("quotes:detail", pk=pk)
@@ -493,10 +522,7 @@ def quote_send(request, pk):
 @permission_required("quotes.change_quote", raise_exception=True)
 @require_POST
 def quote_mark(request, pk, status):
-    quote = get_object_or_404(Quote, pk=pk)
-    if not request.user.is_superuser and quote.sales_user != request.user:
-        messages.error(request, "No tienes permiso para modificar esta cotización.")
-        return redirect("quotes:detail", pk=pk)
+    quote = _get_quote_for_user(request, pk)
     if status not in [Quote.STATUS_ACCEPTED, Quote.STATUS_REJECTED]:
         return redirect("quotes:detail", pk=pk)
     if quote.status != Quote.STATUS_SENT:
@@ -509,7 +535,7 @@ def quote_mark(request, pk, status):
         return redirect("quotes:detail", pk=pk)
     quote.status = status
     quote.save()
-    logger.info("Cotización %s", status.lower(), extra={"quote": quote.quote_number, "status": status, "user": request.user.username})
+    logger.info("Cotización marcada como %s", status.lower(), extra={"quote": quote.quote_number, "status": status, "user": request.user.username})
     messages.success(request, "Estado actualizado.")
     return redirect("quotes:detail", pk=pk)
 
@@ -518,10 +544,7 @@ def quote_mark(request, pk, status):
 @permission_required("quotes.add_quote", raise_exception=True)
 @permission_required("quotes.view_quote", raise_exception=True)
 def quote_duplicate(request, pk):
-    quote = get_object_or_404(Quote, pk=pk)
-    if not request.user.is_superuser and quote.sales_user != request.user:
-        messages.error(request, "No tienes permiso para duplicar esta cotización.")
-        return redirect("quotes:detail", pk=pk)
+    quote = _get_quote_for_user(request, pk)
     with transaction.atomic():
         new_quote = Quote(
             quote_number="",
@@ -541,6 +564,7 @@ def quote_duplicate(request, pk):
             poe=quote.poe,
             poe_monto=quote.poe_monto or Decimal("0.00"),
             notes=quote.notes or "",
+            terms=quote.terms or "",
         )
         new_quote.save()
         for item in quote.items.all():
@@ -552,6 +576,7 @@ def quote_duplicate(request, pk):
                 discount_percent=item.discount_percent,
                 group_name=item.group_name or "",
                 order_in_group=item.order_in_group,
+                configuration_notes=item.configuration_notes or "",
             )
         new_quote.recalculate_totals()
     messages.success(request, "Cotización duplicada. Puedes editarla ahora.")
@@ -563,10 +588,7 @@ def quote_duplicate(request, pk):
 def quote_pdf(request, pk):
     from django.conf import settings as django_settings
 
-    quote = get_object_or_404(Quote, pk=pk)
-    if not request.user.is_superuser and quote.sales_user != request.user:
-        messages.error(request, "No tienes permiso para descargar el PDF de esta cotización.")
-        return redirect("quotes:detail", pk=pk)
+    quote = _get_quote_for_user(request, pk)
 
     company = getattr(django_settings, "QUOTE_PDF_COMPANY", {}) or {}
     vigencia_texto = ""
@@ -595,7 +617,9 @@ def quote_pdf(request, pk):
         try:
             from weasyprint import HTML
             logo_path = finders.find("img/logo.png")
-            header_right_path = finders.find("img/quote_header_right.png") or finders.find("img/quote_header_rigth.png")
+            header_right_path = finders.find(
+                getattr(django_settings, "QUOTE_PDF_HEADER_IMAGE", "img/quote_header_right.png")
+            )
             logo_uri = _build_file_uri(logo_path)
             header_right_uri = _build_file_uri(header_right_path)
             pdf_context = {
@@ -618,6 +642,8 @@ def quote_pdf(request, pk):
             pdf_bytes = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
             response = HttpResponse(pdf_bytes, content_type="application/pdf")
         except Exception as e:
+            # WeasyPrint puede lanzar OSError, ValueError u otras excepciones de dependencias.
+            # Capturamos todas para mostrar mensaje amigable; el traceback se registra en logs.
             logger.exception("Error generando PDF con WeasyPrint: %s", e)
             messages.error(
                 request,
@@ -779,30 +805,13 @@ def report_view(request):
 def _get_report_queryset(request):
     """Queryset filtrado para reportes (misma lógica que report_view)."""
     current_year = timezone.localdate().year
-    queryset = Quote.objects.select_related("customer", "sales_user")
-    if not request.user.is_superuser:
-        queryset = queryset.filter(sales_user=request.user)
     date_from = parse_date(request.GET.get("date_from") or "")
     date_to = parse_date(request.GET.get("date_to") or "")
-    sales_user_id = request.GET.get("sales_user")
-    customer_id = request.GET.get("customer")
     if date_from and date_to and date_from > date_to:
         date_from = None
         date_to = None
-    if date_from:
-        queryset = queryset.filter(issue_date__gte=date_from)
-    if date_to:
-        queryset = queryset.filter(issue_date__lte=date_to)
-    if sales_user_id:
-        try:
-            queryset = queryset.filter(sales_user_id=int(sales_user_id))
-        except (TypeError, ValueError):
-            pass
-    if customer_id:
-        try:
-            queryset = queryset.filter(customer_id=int(customer_id))
-        except (TypeError, ValueError):
-            pass
+    queryset = Quote.objects.select_related("customer", "sales_user")
+    queryset = _apply_common_quote_filters(queryset, request, date_from, date_to)
     if not date_from and not date_to:
         queryset = queryset.filter(issue_date__year=current_year)
     return queryset.order_by("-issue_date")

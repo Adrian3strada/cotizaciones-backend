@@ -42,8 +42,8 @@
                 </form>
                 {% endif %}
                 {% endif %}
-                <a class="btn btn-outline-info mr-1" href="{% url 'quotes:pdf' object.pk %}?preview=1" target="_blank" rel="noopener">Vista previa PDF</a>
-                <a class="btn btn-primary" href="{% url 'quotes:pdf' object.pk %}">Descargar PDF</a>
+                <a class="btn btn-outline-info mr-1" href="{% url 'quotes:pdf' object.pk %}?preview=1" target="_blank" rel="noopener" data-no-loading>Vista previa PDF</a>
+                <a class="btn btn-primary" href="{% url 'quotes:pdf' object.pk %}" data-no-loading>Descargar PDF</a>
             </div>
         </div>
     </div>
@@ -147,17 +147,17 @@
                         <th>Subtotal (productos)</th>
                         <td class="text-right">{{ object.subtotal }}</td>
                     </tr>
-                    {% if object.cableado and object.cableado_monto %}
-                    <tr><th>Cableado</th><td class="text-right">{{ object.cableado_monto }}</td></tr>
+                    {% if object.cableado %}
+                    <tr><th>Cableado</th><td class="text-right">{{ object.cableado_monto|default:0 }}</td></tr>
                     {% endif %}
-                    {% if object.instalacion and object.instalacion_monto %}
-                    <tr><th>Instalación</th><td class="text-right">{{ object.instalacion_monto }}</td></tr>
+                    {% if object.instalacion %}
+                    <tr><th>Instalación</th><td class="text-right">{{ object.instalacion_monto|default:0 }}</td></tr>
                     {% endif %}
-                    {% if object.inyector_poe and object.inyector_poe_monto %}
-                    <tr><th>Inyector PoE</th><td class="text-right">{{ object.inyector_poe_monto }}</td></tr>
+                    {% if object.inyector_poe %}
+                    <tr><th>Inyector PoE</th><td class="text-right">{{ object.inyector_poe_monto|default:0 }}</td></tr>
                     {% endif %}
-                    {% if object.poe and object.poe_monto %}
-                    <tr><th>PoE</th><td class="text-right">{{ object.poe_monto }}</td></tr>
+                    {% if object.poe %}
+                    <tr><th>PoE</th><td class="text-right">{{ object.poe_monto|default:0 }}</td></tr>
                     {% endif %}
                     {% if object.special_discount_percent and object.special_discount_percent > 0 %}
                     <tr>

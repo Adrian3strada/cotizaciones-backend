@@ -157,9 +157,9 @@ class Quote(models.Model):
         if self.quote_number:
             return super().save(*args, **kwargs)
         for _ in range(5):
-            self.quote_number = self.generate_quote_number()
             try:
                 with transaction.atomic():
+                    self.quote_number = self.generate_quote_number()
                     return super().save(*args, **kwargs)
             except IntegrityError:
                 self.quote_number = ""
@@ -171,6 +171,7 @@ class Quote(models.Model):
         prefix = f"SCP-{year}-"
         last_quote = (
             Quote.objects.filter(quote_number__startswith=prefix)
+            .select_for_update()
             .order_by("-quote_number")
             .first()
         )

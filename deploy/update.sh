@@ -14,7 +14,10 @@ echo ">>> Instalando dependencias..."
 echo ">>> Recogiendo archivos estáticos..."
 ./venv/bin/python manage.py collectstatic --noinput
 
+echo ">>> Aplicando migraciones..."
+./venv/bin/python manage.py migrate --noinput
+
 echo ">>> Reiniciando servicio..."
 sudo systemctl restart cotizaciones
 
-echo ">>> Listo. Migraciones se ejecutan al iniciar (scripts/start.py)."
+echo ">>> Listo."

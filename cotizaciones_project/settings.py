@@ -22,9 +22,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    "SECRET_KEY", "django-insecure-c1dwxtgvjgjh9400z-&^srx0ozb58d7tk-xjvsjxxx6fgqlp)8"
-)
+# En producción (DEBUG=False) SECRET_KEY es obligatorio.
+_secret = os.environ.get("SECRET_KEY")
+if not _secret and os.environ.get("DEBUG", "True") == "False":
+    raise ValueError(
+        "SECRET_KEY debe definirse en producción. "
+        "Ej: export SECRET_KEY='$(python -c \"from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())\")'"
+    )
+SECRET_KEY = _secret or "django-insecure-dev-only-change-in-production"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "True") == "True"
@@ -33,37 +38,25 @@ _allowed_hosts_env = os.environ.get("ALLOWED_HOSTS")
 if _allowed_hosts_env:
     ALLOWED_HOSTS = [host.strip() for host in _allowed_hosts_env.split(",") if host.strip()]
 else:
-    ALLOWED_HOSTS = [
-        "localhost",
-        "127.0.0.1",
-        ".railway.app",
-        ".up.railway.app",
-        ".ngrok-free.app",
-        "070b-2806-103e-c-3f94-c4dd-15ca-650-5729.ngrok-free.app",
-        "f82067d55692.ngrok-free.app",
-        "8e4f3cd87ccf.ngrok-free.app",
-        "f20c041eefef.ngrok-free.app",
-        "6b73-187-195-124-21.ngrok-free.app",
-    ]
-# Siempre incluir dominios Railway (por si ALLOWED_HOSTS env los sobrescribe)
-_railway_hosts = [".railway.app", ".up.railway.app"]
-for h in _railway_hosts:
-    if h not in ALLOWED_HOSTS:
-        ALLOWED_HOSTS.append(h)
-# Railway inyecta RAILWAY_PUBLIC_DOMAIN (ej: sisconper-cotizaciones.up.railway.app)
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1", ".railway.app", ".up.railway.app"]
+# Railway: dominio público explícito (evitar ALLOWED_HOSTS=*)
 _railway_public = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
 if _railway_public and _railway_public not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(_railway_public)
-# Si estamos en Railway y sigue fallando, permitir cualquier host (solo en Railway)
-if os.environ.get("RAILWAY_PUBLIC_DOMAIN") and "*" not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append("*")
-# Contabo: dominio o IP del servidor (ej: cotizaciones.tudominio.com o 123.45.67.89)
+# Contabo: dominio o IP (ej: cotizaciones.tudominio.com)
 _contabo_domain = os.environ.get("CONTABO_DOMAIN")
 if _contabo_domain:
     for d in _contabo_domain.split(","):
         d = d.strip()
         if d and d not in ALLOWED_HOSTS:
             ALLOWED_HOSTS.append(d)
+# Dev: ngrok u otros hosts vía NGROK_HOSTS (ej: abc123.ngrok-free.app)
+_ngrok_hosts = os.environ.get("NGROK_HOSTS")
+if _ngrok_hosts:
+    for h in _ngrok_hosts.split(","):
+        h = h.strip()
+        if h and h not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(h)
 
 _csrf_trusted_origins_env = os.environ.get("CSRF_TRUSTED_ORIGINS")
 if _csrf_trusted_origins_env:
@@ -73,17 +66,20 @@ if _csrf_trusted_origins_env:
         if origin.strip()
     ]
 else:
-    CSRF_TRUSTED_ORIGINS = [
-        "https://sisconper-cotizaciones.up.railway.app",
-        "https://070b-2806-103e-c-3f94-c4dd-15ca-650-5729.ngrok-free.app",
-        "https://f82067d55692.ngrok-free.app",
-        "https://f20c041eefef.ngrok-free.app",
-        "https://6b73-187-195-124-21.ngrok-free.app",
-    ]
-# Railway: añadir dominio público cuando esté disponible
-_railway_domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
-if _railway_domain:
-    CSRF_TRUSTED_ORIGINS = list(CSRF_TRUSTED_ORIGINS) + [f"https://{_railway_domain}"]
+    CSRF_TRUSTED_ORIGINS = []
+# Railway: añadir dominio público
+if _railway_domain := os.environ.get("RAILWAY_PUBLIC_DOMAIN"):
+    _origin = f"https://{_railway_domain}"
+    if _origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS = list(CSRF_TRUSTED_ORIGINS) + [_origin]
+# NGROK_HOSTS: orígenes HTTPS para ngrok (dev)
+if _ngrok_hosts:
+    for h in _ngrok_hosts.split(","):
+        h = h.strip()
+        if h:
+            _origin = f"https://{h}" if not h.startswith("http") else h
+            if _origin not in CSRF_TRUSTED_ORIGINS:
+                CSRF_TRUSTED_ORIGINS = list(CSRF_TRUSTED_ORIGINS) + [_origin]
 # Contabo: añadir orígenes HTTPS para el dominio del servidor
 if _contabo_domain:
     for d in _contabo_domain.split(","):
@@ -104,6 +100,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
+    'drf_spectacular',
     'django_filters',
     'customers',
     'catalog',
@@ -250,16 +248,28 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Django REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 50,
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+        'user': '1000/hour',
+    },
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 # Motor del PDF de cotizaciones: "reportlab" (coordenadas en código) o "weasyprint" (template HTML)
 QUOTE_PDF_ENGINE = os.environ.get("QUOTE_PDF_ENGINE", "reportlab")
+# Imagen del encabezado derecho (a la altura del logo). Ruta en static, ej: img/quote_header_right.png
+QUOTE_PDF_HEADER_IMAGE = os.environ.get("QUOTE_PDF_HEADER_IMAGE", "img/quote_header_right.png")
 
 # Datos de empresa para el PDF de cotizaciones (personalizables por entorno)
 QUOTE_PDF_COMPANY = {
@@ -284,3 +294,10 @@ QUOTE_PDF_PAYMENT_FORM = os.environ.get("QUOTE_PDF_PAYMENT_FORM", "")
 QUOTE_PDF_DELIVERY_TIME = os.environ.get("QUOTE_PDF_DELIVERY_TIME", "")
 QUOTE_PDF_WARRANTY = os.environ.get("QUOTE_PDF_WARRANTY", "")
 QUOTE_PDF_DELIVERY_PLACE = os.environ.get("QUOTE_PDF_DELIVERY_PLACE", "")
+
+# drf-spectacular (OpenAPI / Swagger)
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Cotizaciones API",
+    "DESCRIPTION": "API REST para integración con ERP/CRM. Cotizaciones, clientes y catálogo.",
+    "VERSION": "1.0.0",
+}

@@ -39,7 +39,7 @@
                 <button type="submit" class="btn btn-primary">Guardar</button>
                 {% if object %}
                 <a class="btn btn-secondary" href="{% url 'customers:detail' pk=object.customer_id %}">Cancelar</a>
-                {% elif request.GET.customer %}
+                {% elif request.GET.customer and request.GET.customer != "0" %}
                 <a class="btn btn-secondary" href="{% url 'customers:detail' pk=request.GET.customer %}">Cancelar</a>
                 {% else %}
                 <a class="btn btn-secondary" href="{% url 'customers:list' %}">Cancelar</a>

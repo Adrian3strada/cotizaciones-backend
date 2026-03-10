@@ -1,0 +1,10 @@
+[tool.coverage.run]
+source = ["customers", "catalog", "accounts", "quotes", "api"]
+omit = ["*/migrations/*", "*/tests.py", "*/management/commands/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+]

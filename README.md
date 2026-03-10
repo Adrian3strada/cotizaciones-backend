@@ -57,6 +57,12 @@ WeasyPrint requiere dependencias del sistema. En Windows puede ser necesario:
 
 Guía oficial: https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#windows
 
+## PDF – Imagen del encabezado (a la altura del logo)
+
+La imagen que aparece en la esquina superior derecha del PDF, a la misma altura que el logo, se busca en `static/img/quote_header_right.png`. Coloca ahí tu imagen (ej: ilustración de proyectores/monitores).
+
+Para usar otra ruta: `QUOTE_PDF_HEADER_IMAGE=img/mi_imagen.png`
+
 ## PDF – Datos de empresa
 
 Los datos de la empresa en el PDF (nombre, RFC, dirección, teléfono, etc.) se leen de `settings.QUOTE_PDF_COMPANY`, que a su vez puede sobreescribirse con variables de entorno:
@@ -101,7 +107,7 @@ En el servicio de la app, ve a **Variables** y añade:
 | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` |
 | `SECRET_KEY` | Una clave secreta segura (genera una nueva para producción) |
 | `DEBUG` | `False` |
-| `ALLOWED_HOSTS` | `*` (o tu dominio específico) |
+| `ALLOWED_HOSTS` | Tu dominio (ej. `tu-app.up.railway.app`) o déjalo vacío para usar `RAILWAY_PUBLIC_DOMAIN` |
 
 > **Nota:** Reemplaza `Postgres` por el nombre de tu servicio PostgreSQL si es diferente.
 
@@ -131,10 +137,40 @@ railway run python manage.py setup_groups
 
 ## Despliegue en producción (general)
 
+- **SECRET_KEY**: obligatorio en producción (`DEBUG=False`). Genera una con `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`
 - **ALLOWED_HOSTS**: en `.env` define tu dominio, ej. `ALLOWED_HOSTS=midominio.com,www.midominio.com`
 - **CSRF_TRUSTED_ORIGINS**: si usas HTTPS, añade `CSRF_TRUSTED_ORIGINS=https://midominio.com`
 - **DEBUG**: debe ser `False` en producción (ya está en tu `.env`)
-- **Archivos MEDIA**: con `DEBUG=False`, Django no sirve archivos subidos. Configura tu servidor web (Nginx/Apache) o un CDN para servir la carpeta `media/`.
+- **Archivos MEDIA**: con `DEBUG=False`, Django no sirve archivos subidos. Configura Nginx (ver abajo) o un CDN para servir la carpeta `media/`.
+- **NGROK_HOSTS** (solo dev): si usas ngrok, define `NGROK_HOSTS=abc123.ngrok-free.app` para permitir el túnel.
+
+### Archivos MEDIA con Nginx
+
+En tu bloque `server` de Nginx, añade:
+
+```nginx
+location /media/ {
+    alias /var/www/cotizaciones/media/;
+}
+```
+
+### Tareas programadas (cron)
+
+Los comandos `expire_quotes` y `warn_expiring_quotes` deben ejecutarse periódicamente. Configura cron:
+
+```bash
+crontab -e
+```
+
+Añade (ajusta la ruta y el usuario):
+
+```
+# Expirar cotizaciones vencidas (diario a las 00:05)
+5 0 * * * cd /var/www/cotizaciones && ./venv/bin/python manage.py expire_quotes
+
+# Avisar cotizaciones por vencer (diario a las 08:00)
+0 8 * * * cd /var/www/cotizaciones && ./venv/bin/python manage.py warn_expiring_quotes
+```
 
 ## API REST
 
@@ -144,8 +180,11 @@ Endpoints para integración con ERP/CRM (requiere autenticación):
 - `GET /api/quotes/<id>/` – Detalle de cotización con items
 - `GET /api/customers/` – Lista de clientes
 - `GET /api/catalog/` – Catálogo de modelos de cámara
+- `POST /api/auth-token/` – Obtener token (body: `username`, `password`)
 
-Autenticación: sesión web o Basic Auth.
+Autenticación: Token (recomendado para integraciones), sesión web o Basic Auth.
+
+Documentación OpenAPI: `/api/schema/`, Swagger UI: `/api/schema/swagger-ui/`, ReDoc: `/api/schema/redoc/`
 
 ## Estructura
 

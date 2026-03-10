@@ -34,7 +34,7 @@
         <h3 class="card-title">Filtros</h3>
     </div>
     <div class="card-body">
-        <form method="get" class="quote-filters-form">
+        <form method="get" class="quote-filters-form" data-no-loading>
             <div class="row">
                 <div class="col-md-2">
                     <label for="id_q">Buscar</label>
@@ -86,7 +86,7 @@
             <div class="mt-3">
                 <button type="submit" class="btn btn-primary">Filtrar</button>
                 <a class="btn btn-secondary" href="{% url 'quotes:list' %}">Limpiar</a>
-                <a class="btn btn-outline-success ml-2" href="{% url 'quotes:list_export' %}?{{ request.GET.urlencode }}"><i class="fas fa-file-csv mr-1"></i> Exportar CSV</a>
+                <a class="btn btn-outline-success ml-2" href="{% url 'quotes:list_export' %}?{{ request.GET.urlencode }}" data-no-loading><i class="fas fa-file-csv mr-1"></i> Exportar CSV</a>
             </div>
         </form>
     </div>

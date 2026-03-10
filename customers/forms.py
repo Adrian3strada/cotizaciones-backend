@@ -1,6 +1,7 @@
 import re
 
 from django import forms
+from django.core.validators import URLValidator
 
 from customers.models import Customer, CustomerContact
 
@@ -23,9 +24,16 @@ class CustomerForm(forms.ModelForm):
         ]
 
     def clean_website(self):
-        value = self.cleaned_data.get("website")
-        if value and "://" not in value:
-            return "https://" + value
+        value = self.cleaned_data.get("website", "").strip()
+        if not value:
+            return value
+        if "://" not in value:
+            value = "https://" + value
+        validator = URLValidator()
+        try:
+            validator(value)
+        except Exception:
+            raise forms.ValidationError("Ingresa una URL válida.")
         return value
 
 
@@ -36,6 +44,7 @@ class CustomerContactForm(forms.ModelForm):
             "customer",
             "full_name",
             "email",
+            "phone",
             "mobile",
             "position",
             "is_primary",

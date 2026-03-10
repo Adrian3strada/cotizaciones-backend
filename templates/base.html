@@ -6,13 +6,14 @@
     <meta charset="utf-8">
     <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}Cotizaciones{% endblock %}</title>
-    <link rel="icon" type="image/png" href="{% static 'img/image.png' %}">
+    <link rel="icon" type="image/x-icon" href="{% static 'img/icon_grande.ico' %}">
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'img/icon_grande.ico' %}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
-    <link rel="stylesheet" href="{% static 'css/custom.css' %}?v=20250302">
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}?v=20250309">
 </head>
 
 <body class="hold-transition sidebar-mini theme-dark">
@@ -118,6 +119,13 @@
         </div>
     </div>
 
+    <!-- Overlay de carga -->
+    <div class="app-loading-overlay" id="appLoadingOverlay" aria-hidden="true">
+        <div class="app-loading-spinner" role="status">
+            <span class="sr-only">Cargando...</span>
+        </div>
+    </div>
+
     <!-- Modal de confirmación (reemplaza alert/confirm del navegador) -->
     <div class="modal fade" id="appConfirmModal" tabindex="-1" role="dialog" aria-labelledby="appConfirmModalTitle" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
@@ -181,6 +189,34 @@
                 } else if (href) {
                     $("#appConfirmModal").data("pendingHref", null).data("pendingMethod", null).modal("hide");
                     window.location.href = href;
+                }
+            });
+
+            // Loading overlay: mostrar al enviar formularios (excepto confirmación)
+            $(document).on("submit", "form:not([data-no-loading])", function () {
+                var $form = $(this);
+                if (!$form.data("confirm-message") && !$form.closest("#appConfirmModal").length) {
+                    $("#appLoadingOverlay").addClass("is-visible").attr("aria-hidden", "false");
+                }
+            });
+            // Ocultar al cargar la página (por si se vuelve atrás)
+            $(window).on("pageshow", function () {
+                $("#appLoadingOverlay").removeClass("is-visible").attr("aria-hidden", "true");
+            });
+            // Mostrar overlay al navegar (enlaces internos, con delay para evitar parpadeo en clics rápidos)
+            // No mostrar para: PDF, descargas, target="_blank", data-no-loading
+            $(document).on("click", "a[href^='/']", function () {
+                var $a = $(this);
+                var href = $a.attr("href");
+                var skip = !href || href === "#" || $a.attr("target") || $a.data("confirm-message") ||
+                    $a.is("[data-no-loading]") || /\/pdf\/?(\?|$)/.test(href) || /\/exportar\/?(\?|$)/.test(href);
+                if (!skip) {
+                    var delay = setTimeout(function () {
+                        $("#appLoadingOverlay").addClass("is-visible").attr("aria-hidden", "false");
+                    }, 200);
+                    $(window).one("pageshow", function () {
+                        clearTimeout(delay);
+                    });
                 }
             });
 
