@@ -5,8 +5,8 @@ import subprocess
 import sys
 
 
-def run(cmd, check=True):
-    result = subprocess.run(cmd, shell=True)
+def run(cmd, check=True, env=None):
+    result = subprocess.run(cmd, shell=True, env=env or os.environ)
     if check and result.returncode != 0:
         sys.exit(result.returncode)
     return result.returncode
@@ -18,12 +18,14 @@ def main():
     # Crear superusuario si las variables están definidas
     username = os.environ.get("DJANGO_SUPERUSER_USERNAME")
     password = os.environ.get("DJANGO_SUPERUSER_PASSWORD")
-    email = (os.environ.get("DJANGO_SUPERUSER_EMAIL") or "").strip() or "admin@sisconper.com"
+    email_raw = (os.environ.get("DJANGO_SUPERUSER_EMAIL") or "").strip()
+    # Django exige email con formato válido (debe contener @)
+    email = email_raw if "@" in email_raw else "admin@sisconper.com"
 
     if username and password:
-        # Django requiere email válido; asegurar que siempre haya uno antes de --noinput
-        os.environ["DJANGO_SUPERUSER_EMAIL"] = email
-        run("python manage.py createsuperuser --noinput", check=False)
+        env = os.environ.copy()
+        env["DJANGO_SUPERUSER_EMAIL"] = email
+        run("python manage.py createsuperuser --noinput", check=False, env=env)
 
     port = os.environ.get("PORT", "8000")
     os.execvp("gunicorn", [
