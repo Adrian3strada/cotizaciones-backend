@@ -20,7 +20,6 @@ class CustomerForm(forms.ModelForm):
             "city",
             "postal_code",
             "phone",
-            "mobile",
         ]
 
     def clean_website(self):
@@ -44,7 +43,6 @@ class CustomerContactForm(forms.ModelForm):
             "customer",
             "full_name",
             "email",
-            "phone",
             "mobile",
             "position",
             "is_primary",

@@ -217,7 +217,8 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
     c.drawString(CL_X + 6, Y(row_start + step * 5), "Tels.")
     c.drawString(VAL_X, Y(row_start + step * 5), _val(cust.phone or ""))
     c.drawString(CL_X + 6, Y(row_start + step * 6), "Celular")
-    c.drawString(VAL_X, Y(row_start + step * 6), _val(cust.mobile or ""))
+    celular = cust.mobile or (contact.mobile if contact else "") or ""
+    c.drawString(VAL_X, Y(row_start + step * 6), _val(celular))
     c.drawString(CL_X + 6, Y(row_start + step * 7), "Contacto:")
     c.drawString(VAL_X, Y(row_start + step * 7), _val(contact.full_name if contact else ""))
     c.drawString(CL_X + 6, Y(row_start + step * 8), "Puesto:")
