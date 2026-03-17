@@ -1719,3 +1719,122 @@ body {
         height: 140px;
     }
 }
+
+/* ========== Tablas responsive (card layout en móvil) ========== */
+.table-responsive-cards {
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+    .table-responsive-cards .table thead {
+        display: none;
+    }
+
+    .table-responsive-cards .table tbody tr {
+        display: block;
+        border: 1px solid var(--brand-border);
+        border-radius: 8px;
+        margin-bottom: 12px;
+        padding: 12px;
+        background: rgba(15, 22, 33, 0.6);
+    }
+
+    .table-responsive-cards .table tbody tr {
+        border-bottom: 1px solid var(--brand-border);
+    }
+
+    .table-responsive-cards .table tbody tr:last-child {
+        margin-bottom: 0;
+    }
+
+    .table-responsive-cards .table tbody td {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 8px 0;
+        border: none;
+        border-bottom: 1px solid rgba(86, 127, 175, 0.15);
+    }
+
+    .table-responsive-cards .table tbody td:last-child {
+        border-bottom: none;
+    }
+
+    .table-responsive-cards .table tbody td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--brand-muted);
+        flex-shrink: 0;
+        min-width: 100px;
+    }
+
+    .table-responsive-cards .table tbody td {
+        flex-wrap: wrap;
+    }
+
+    .table-responsive-cards .table tbody td .form-control,
+    .table-responsive-cards .table tbody td select,
+    .table-responsive-cards .table tbody td input {
+        flex: 1;
+        min-width: 0;
+    }
+
+    /* Botones de acción en fila */
+    .table-responsive-cards .table tbody td.text-right {
+        justify-content: flex-end;
+    }
+
+    .table-responsive-cards .table tbody td.text-right .btn {
+        margin-left: 4px;
+    }
+
+    /* Botones de filtros y acciones */
+    .filter-action-btns .btn,
+    .filter-action-btns a.btn {
+        margin-right: 8px;
+        margin-bottom: 8px;
+    }
+
+    /* Content header: botones que se envuelven */
+    .content-header .btn,
+    .content-header form.d-inline {
+        margin-bottom: 8px;
+    }
+
+    /* Navbar: texto de usuario más compacto en móvil */
+    .nav-user-divider .nav-link-text {
+        font-size: 0.9rem;
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Sidebar: asegurar que no desborde */
+    .main-sidebar {
+        overflow-x: hidden;
+    }
+
+    /* Quote items table: inputs más compactos en móvil */
+    .quote-items-table tbody td .form-control,
+    .quote-items-table tbody td select {
+        font-size: 14px;
+        padding: 6px 10px;
+    }
+
+    /* Filas de grupo en quote detail (table-secondary) */
+    .table-responsive-cards .table tbody tr.table-secondary td {
+        padding: 10px 0;
+        border-bottom: none;
+    }
+
+    .table-responsive-cards .table tbody tr.table-secondary td::before {
+        display: none;
+    }
+
+    .table-responsive-cards .table tbody tr.table-secondary td[colspan] {
+        display: block !important;
+        border-bottom: 1px solid var(--brand-border);
+    }
+}

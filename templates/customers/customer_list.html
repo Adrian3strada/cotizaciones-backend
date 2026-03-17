@@ -30,7 +30,7 @@
 </div>
 
 <div class="card">
-    <div class="card-body table-responsive p-0">
+    <div class="card-body table-responsive p-0 table-responsive-cards">
         <table class="table table-hover table-striped">
             <thead>
                 <tr>
@@ -42,9 +42,9 @@
             <tbody>
                 {% for customer in object_list %}
                 <tr>
-                    <td><a href="{% url 'customers:detail' customer.pk %}">{{ customer.name }}</a></td>
-                    <td>{{ customer.phone|default:"-" }}</td>
-                    <td class="text-right">
+                    <td data-label="Nombre"><a href="{% url 'customers:detail' customer.pk %}">{{ customer.name }}</a></td>
+                    <td data-label="Tels.">{{ customer.phone|default:"-" }}</td>
+                    <td data-label="Acciones" class="text-right">
                         {% if perms.customers.change_customer %}
                         <a class="btn btn-sm btn-outline-primary" href="{% url 'customers:update' customer.pk %}">
                             Editar

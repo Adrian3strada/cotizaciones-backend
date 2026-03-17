@@ -30,7 +30,7 @@
 </div>
 
 <div class="card">
-    <div class="card-body table-responsive p-0">
+    <div class="card-body table-responsive p-0 table-responsive-cards">
         <table class="table table-hover table-striped">
             <thead>
                 <tr>
@@ -45,12 +45,12 @@
             <tbody>
                 {% for camera in object_list %}
                 <tr>
-                    <td><a href="{% url 'catalog:detail' camera.pk %}">{{ camera.model_code }}</a></td>
-                    <td>{{ camera.brand|default:"-" }}</td>
-                    <td>{{ camera.name|default:"-" }}</td>
-                    <td>{{ camera.base_price }}</td>
-                    <td>{{ camera.currency }}</td>
-                    <td class="text-right">
+                    <td data-label="Código"><a href="{% url 'catalog:detail' camera.pk %}">{{ camera.model_code }}</a></td>
+                    <td data-label="Marca">{{ camera.brand|default:"-" }}</td>
+                    <td data-label="Nombre">{{ camera.name|default:"-" }}</td>
+                    <td data-label="Precio base">{{ camera.base_price }}</td>
+                    <td data-label="Moneda">{{ camera.currency }}</td>
+                    <td data-label="Acciones" class="text-right">
                         {% if perms.catalog.change_cameramodel %}
                             <a class="btn btn-sm btn-outline-primary" href="{% url 'catalog:update' camera.pk %}">Editar</a>
                         {% endif %}

@@ -30,7 +30,7 @@
 </div>
 
 <div class="card">
-    <div class="card-body table-responsive p-0">
+    <div class="card-body table-responsive p-0 table-responsive-cards">
         <table class="table table-hover table-striped">
             <thead>
                 <tr>
@@ -45,24 +45,24 @@
             <tbody>
                 {% for user_obj in object_list %}
                 <tr>
-                    <td>{{ user_obj.username }}</td>
-                    <td>{{ user_obj.get_full_name|default:"-" }}</td>
-                    <td>{{ user_obj.email|default:"-" }}</td>
-                    <td>
+                    <td data-label="Usuario">{{ user_obj.username }}</td>
+                    <td data-label="Nombre">{{ user_obj.get_full_name|default:"-" }}</td>
+                    <td data-label="Email">{{ user_obj.email|default:"-" }}</td>
+                    <td data-label="Activo">
                         {% if user_obj.is_active %}
                         <span class="badge badge-success">Sí</span>
                         {% else %}
                         <span class="badge badge-secondary">No</span>
                         {% endif %}
                     </td>
-                    <td>
+                    <td data-label="Roles">
                         {% for group in user_obj.groups.all %}
                         <span class="badge badge-info">{{ group.name }}</span>
                         {% empty %}
                         <span class="text-muted">-</span>
                         {% endfor %}
                     </td>
-                    <td class="text-right">
+                    <td data-label="Acciones" class="text-right">
                         {% if perms.auth.change_user %}
                         <a class="btn btn-sm btn-outline-primary"
                             href="{% url 'accounts:update' user_obj.pk %}">Editar</a>

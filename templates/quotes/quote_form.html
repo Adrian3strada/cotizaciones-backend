@@ -40,7 +40,7 @@
             <div class="row">
                 {% for field in form %}
                 {% if field.name not in optional_service_fields %}
-                <div class="col-md-6">
+                <div class="col-12 col-md-6">
                     {% if field.field.widget.input_type == 'checkbox' %}
                     <div class="form-check mb-3">
                         {{ field }}
@@ -80,23 +80,23 @@
                 <div class="card-body">
                     <p class="text-muted small mb-3">Marque e indique el monto cuando aplique.</p>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-12 col-md-6 mb-2 mb-md-0">
                             <div class="form-check mb-2">
                                 {{ form.cableado }}
                                 <label class="form-check-label" for="{{ form.cableado.id_for_label }}">Cableado</label>
                             </div>
-                            <div class="form-group ml-4">
+                            <div class="form-group ml-0 ml-md-4">
                                 <label for="{{ form.cableado_monto.id_for_label }}">Monto</label>
                                 {{ form.cableado_monto }}
                                 {% for error in form.cableado_monto.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-12 col-md-6 mb-2 mb-md-0">
                             <div class="form-check mb-2">
                                 {{ form.instalacion }}
                                 <label class="form-check-label" for="{{ form.instalacion.id_for_label }}">Instalación</label>
                             </div>
-                            <div class="form-group ml-4">
+                            <div class="form-group ml-0 ml-md-4">
                                 <label for="{{ form.instalacion_monto.id_for_label }}">Monto</label>
                                 {{ form.instalacion_monto }}
                                 {% for error in form.instalacion_monto.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
@@ -104,23 +104,23 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-12 col-md-6 mb-2 mb-md-0">
                             <div class="form-check mb-2">
                                 {{ form.inyector_poe }}
                                 <label class="form-check-label" for="{{ form.inyector_poe.id_for_label }}">Inyector PoE</label>
                             </div>
-                            <div class="form-group ml-4">
+                            <div class="form-group ml-0 ml-md-4">
                                 <label for="{{ form.inyector_poe_monto.id_for_label }}">Monto</label>
                                 {{ form.inyector_poe_monto }}
                                 {% for error in form.inyector_poe_monto.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-12 col-md-6 mb-2 mb-md-0">
                             <div class="form-check mb-2">
                                 {{ form.poe }}
                                 <label class="form-check-label" for="{{ form.poe.id_for_label }}">PoE</label>
                             </div>
-                            <div class="form-group ml-4">
+                            <div class="form-group ml-0 ml-md-4">
                                 <label for="{{ form.poe_monto.id_for_label }}">Monto</label>
                                 {{ form.poe_monto }}
                                 {% for error in form.poe_monto.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
@@ -137,7 +137,7 @@
                         <i class="fas fa-plus mr-1"></i> Agregar item
                     </button>
                 </div>
-                <div class="card-body table-responsive p-0">
+                <div class="card-body table-responsive p-0 table-responsive-cards">
                     {{ formset.management_form }}
 
                     {% if formset.non_form_errors %}
@@ -148,7 +148,7 @@
                     </div>
                     {% endif %}
 
-                    <table class="table table-bordered table-striped table-hover mb-0">
+                    <table class="table table-bordered table-striped table-hover mb-0 quote-items-table">
                         <thead>
                             <tr>
                                 <th>Modelo</th>
@@ -163,43 +163,43 @@
                         <tbody id="items-formset">
                             {% for item_form in formset %}
                             <tr class="item-form-row">
-                                <td>
+                                <td data-label="Modelo">
                                     {{ item_form.id }}{{ item_form.camera_model }}
                                     {% for error in item_form.camera_model.errors %}
                                     <div class="text-danger">{{ error }}</div>
                                     {% endfor %}
                                 </td>
-                                <td>
+                                <td data-label="Cantidad">
                                     {{ item_form.quantity }}
                                     {% for error in item_form.quantity.errors %}
                                     <div class="text-danger">{{ error }}</div>
                                     {% endfor %}
                                 </td>
-                                <td>
+                                <td data-label="Precio unit.">
                                     {{ item_form.unit_price }}
                                     {% for error in item_form.unit_price.errors %}
                                     <div class="text-danger">{{ error }}</div>
                                     {% endfor %}
                                 </td>
-                                <td>
+                                <td data-label="Descuento (%)">
                                     {{ item_form.discount_percent }}
                                     {% for error in item_form.discount_percent.errors %}
                                     <div class="text-danger">{{ error }}</div>
                                     {% endfor %}
                                 </td>
-                                <td>
+                                <td data-label="Grupo">
                                     {{ item_form.group_name }}
                                     {% for error in item_form.group_name.errors %}
                                     <div class="text-danger">{{ error }}</div>
                                     {% endfor %}
                                 </td>
-                                <td>
+                                <td data-label="Orden">
                                     {{ item_form.order_in_group }}
                                     {% for error in item_form.order_in_group.errors %}
                                     <div class="text-danger">{{ error }}</div>
                                     {% endfor %}
                                 </td>
-                                <td class="text-center item-row-actions">
+                                <td data-label="Eliminar" class="text-center item-row-actions">
                                     {% if item_form.instance.pk %}
                                     <label class="mb-0 d-inline-flex align-items-center">
                                         {{ item_form.DELETE }}
@@ -230,13 +230,13 @@
 
         <template id="empty-form-row">
             <tr class="item-form-row">
-                <td>{{ formset.empty_form.id }}{{ formset.empty_form.camera_model }}</td>
-                <td>{{ formset.empty_form.quantity }}</td>
-                <td>{{ formset.empty_form.unit_price }}</td>
-                <td>{{ formset.empty_form.discount_percent }}</td>
-                <td>{{ formset.empty_form.group_name }}</td>
-                <td>{{ formset.empty_form.order_in_group }}</td>
-                <td class="text-center item-row-actions"><a href="#" class="remove-item-row text-danger">Quitar</a></td>
+                <td data-label="Modelo">{{ formset.empty_form.id }}{{ formset.empty_form.camera_model }}</td>
+                <td data-label="Cantidad">{{ formset.empty_form.quantity }}</td>
+                <td data-label="Precio unit.">{{ formset.empty_form.unit_price }}</td>
+                <td data-label="Descuento (%)">{{ formset.empty_form.discount_percent }}</td>
+                <td data-label="Grupo">{{ formset.empty_form.group_name }}</td>
+                <td data-label="Orden">{{ formset.empty_form.order_in_group }}</td>
+                <td data-label="Eliminar" class="text-center item-row-actions"><a href="#" class="remove-item-row text-danger">Quitar</a></td>
             </tr>
         </template>
     </div>
