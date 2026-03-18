@@ -316,6 +316,99 @@ body {
     box-shadow: 0 0 0 0.15rem rgba(98, 195, 255, 0.25);
 }
 
+.theme-dark .form-control::placeholder {
+    color: rgba(234, 242, 255, 0.4);
+}
+
+/* Formulario de usuario: checkboxes y roles */
+.user-form-card .form-group label {
+    color: var(--brand-text);
+    font-weight: 500;
+}
+
+.user-form-card .form-text.text-muted {
+    color: var(--brand-muted) !important;
+    font-size: 0.85rem;
+}
+
+.user-form-roles .roles-checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.user-form-roles .form-check {
+    margin: 0;
+    padding: 0;
+}
+
+.user-form-roles .form-check {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0;
+}
+
+.user-form-roles .form-check-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    margin-left: 0;
+    background: rgba(16, 27, 40, 0.8);
+    border: 1px solid rgba(86, 127, 175, 0.3);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--brand-text);
+    flex: 1;
+}
+
+.user-form-roles .form-check-label:hover {
+    border-color: rgba(98, 195, 255, 0.5);
+    background: rgba(20, 40, 65, 0.9);
+}
+
+.user-form-roles .form-check-input {
+    flex-shrink: 0;
+}
+
+.user-form-roles .form-check-input:checked + .form-check-label {
+    border-color: rgba(72, 146, 255, 0.7);
+    background: rgba(72, 146, 255, 0.15);
+    box-shadow: 0 0 0 1px rgba(72, 146, 255, 0.3);
+}
+
+.theme-dark .form-check-input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    background-color: rgba(10, 18, 28, 0.9);
+    border: 1.5px solid rgba(86, 127, 175, 0.5);
+    cursor: pointer;
+}
+
+.theme-dark .form-check-input:checked {
+    background-color: var(--brand-primary);
+    border-color: var(--brand-primary);
+}
+
+.theme-dark .form-check-input:focus {
+    box-shadow: 0 0 0 0.2rem rgba(72, 146, 255, 0.35);
+}
+
+.theme-dark .form-check-label {
+    color: var(--brand-text);
+    cursor: pointer;
+}
+
+/* Activo checkbox en formulario usuario */
+.user-form-card .form-check.mb-3 {
+    padding: 12px 16px;
+    background: rgba(16, 27, 40, 0.5);
+    border-radius: 10px;
+    border: 1px solid rgba(86, 127, 175, 0.2);
+}
+
 /* Quote form – Items table (bordes acorde al tema oscuro) */
 .quote-items-card .card {
     border-color: rgba(86, 127, 175, 0.2);

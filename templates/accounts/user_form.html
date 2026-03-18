@@ -19,18 +19,18 @@
     </div>
 </div>
 
-<div class="card card-primary">
+<div class="card card-primary user-form-card">
     <div class="card-body">
         <form method="post">
             {% csrf_token %}
             <div class="row">
                 {% for field in form %}
-                    <div class="col-12 col-md-6">
+                    <div class="col-12 {% if field.name == 'groups' %}col-md-12{% else %}col-md-6{% endif %}">
                         {% if field.name == 'groups' %}
-                        <div class="form-group mb-3">
-                            <label>{{ field.label }}</label>
+                        <div class="form-group mb-3 user-form-roles">
+                            <label class="d-block mb-2">{{ field.label }}</label>
                             {% if field.field.queryset %}
-                            <div class="form-check-group pl-0">
+                            <div class="roles-checkbox-group">
                                 {{ field }}
                             </div>
                             {% else %}
