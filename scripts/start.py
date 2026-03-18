@@ -14,6 +14,7 @@ def run(cmd, check=True, env=None):
 
 def main():
     run("python manage.py migrate --noinput")
+    run("python manage.py setup_groups")
 
     # Crear superusuario si las variables están definidas
     username = os.environ.get("DJANGO_SUPERUSER_USERNAME")

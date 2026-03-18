@@ -40,9 +40,11 @@ if _allowed_hosts_env:
 else:
     ALLOWED_HOSTS = ["localhost", "127.0.0.1", ".railway.app", ".up.railway.app"]
 # Railway: dominio público explícito (evitar ALLOWED_HOSTS=*)
-_railway_public = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
-if _railway_public and _railway_public not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(_railway_public)
+_railway_public = os.environ.get("RAILWAY_PUBLIC_DOMAIN") or os.environ.get("RAILWAY_APP_DOMAIN")
+if _railway_public:
+    _host = _railway_public.strip().replace("https://", "").replace("http://", "").rstrip("/")
+    if _host and _host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(_host)
 # Contabo: dominio o IP (ej: cotizaciones.tudominio.com)
 _contabo_domain = os.environ.get("CONTABO_DOMAIN")
 if _contabo_domain:
@@ -67,11 +69,14 @@ if _csrf_trusted_origins_env:
     ]
 else:
     CSRF_TRUSTED_ORIGINS = []
-# Railway: añadir dominio público
-if _railway_domain := os.environ.get("RAILWAY_PUBLIC_DOMAIN"):
-    _origin = f"https://{_railway_domain}"
-    if _origin not in CSRF_TRUSTED_ORIGINS:
-        CSRF_TRUSTED_ORIGINS = list(CSRF_TRUSTED_ORIGINS) + [_origin]
+# Railway: añadir dominio público (HTTP y HTTPS por si el proxy cambia el esquema)
+_railway_domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN") or os.environ.get("RAILWAY_APP_DOMAIN")
+if _railway_domain:
+    _domain = _railway_domain.strip().replace("https://", "").replace("http://", "").rstrip("/")
+    for _scheme in ("https", "http"):
+        _origin = f"{_scheme}://{_domain}"
+        if _origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS = list(CSRF_TRUSTED_ORIGINS) + [_origin]
 # NGROK_HOSTS: orígenes HTTPS para ngrok (dev)
 if _ngrok_hosts:
     for h in _ngrok_hosts.split(","):

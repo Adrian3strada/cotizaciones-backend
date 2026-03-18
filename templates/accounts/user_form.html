@@ -26,7 +26,20 @@
             <div class="row">
                 {% for field in form %}
                     <div class="col-12 col-md-6">
-                        {% if field.field.widget.input_type == 'checkbox' %}
+                        {% if field.name == 'groups' %}
+                        <div class="form-group mb-3">
+                            <label>{{ field.label }}</label>
+                            {% if field.field.queryset %}
+                            <div class="form-check-group pl-0">
+                                {{ field }}
+                            </div>
+                            {% else %}
+                            <p class="text-warning small mb-0"><i class="fas fa-exclamation-triangle mr-1"></i>No hay roles. Ejecuta en Railway: <code>railway run python manage.py setup_groups</code></p>
+                            {% endif %}
+                            {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                            {% for error in field.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
+                        </div>
+                        {% elif field.field.widget.input_type == 'checkbox' %}
                             <div class="form-check mb-3">
                                 {{ field }}
                                 <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
