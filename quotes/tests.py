@@ -194,16 +194,19 @@ class QuoteViewTests(TestCase):
         self.quote.refresh_from_db()
         self.assertEqual(self.quote.status, Quote.STATUS_ACCEPTED)
 
-    def test_csv_export_requires_login(self):
+    def test_excel_export_requires_login(self):
         response = self.client.get(reverse("quotes:list_export"))
         self.assertEqual(response.status_code, 302)
 
-    def test_csv_export_ok(self):
+    def test_excel_export_ok(self):
         self.client.login(username="vendedor", password="testpass123")
         response = self.client.get(reverse("quotes:list_export"))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response["Content-Type"], "text/csv; charset=utf-8")
-        self.assertIn(b"SCP-2026-000010", response.content)
+        self.assertIn(response["Content-Type"], [
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; charset=utf-8",
+        ])
+        self.assertTrue(response.content.startswith(b"PK"), "Debe ser archivo xlsx (zip)")
 
     def test_dashboard_requires_login(self):
         response = self.client.get(reverse("quotes:dashboard"))
@@ -233,8 +236,11 @@ class QuoteViewTests(TestCase):
         self.client.login(username="vendedor", password="testpass123")
         response = self.client.get(reverse("quotes:report_export"))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response["Content-Type"], "text/csv; charset=utf-8")
-        self.assertIn(b"SCP-2026-000010", response.content)
+        self.assertIn(response["Content-Type"], [
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; charset=utf-8",
+        ])
+        self.assertTrue(response.content.startswith(b"PK"), "Debe ser archivo xlsx (zip)")
 
     def test_full_flow_send_reject(self):
         """Flujo: enviar cotización en borrador, luego rechazar."""

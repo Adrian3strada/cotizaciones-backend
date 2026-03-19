@@ -440,6 +440,78 @@ body {
     overflow: visible;
 }
 
+/* Servicios opcionales – formulario cotización */
+.optional-services-card .card-header {
+    border-bottom-color: rgba(86, 127, 175, 0.2);
+}
+
+.optional-services-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.optional-service-item {
+    background: rgba(16, 27, 40, 0.6);
+    border: 1px solid rgba(86, 127, 175, 0.25);
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.optional-service-header {
+    display: flex;
+    align-items: center;
+}
+
+.optional-service-check {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    margin: 0;
+    font-weight: 500;
+    color: var(--brand-text);
+}
+
+.optional-service-check input[type="checkbox"] {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    position: static !important;
+    margin-left: 0 !important;
+    cursor: pointer;
+}
+
+.optional-service-label {
+    flex: 1;
+    overflow: visible;
+}
+
+.optional-service-monto label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--brand-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.optional-service-monto input {
+    width: 100%;
+    max-width: 140px;
+}
+
+@media (max-width: 768px) {
+    .optional-services-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* Quote form – Items table (bordes acorde al tema oscuro) */
 .quote-items-card .card {
     border-color: rgba(86, 127, 175, 0.2);

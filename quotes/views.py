@@ -5,7 +5,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.db import models, transaction
 from django.db.models import Count, DecimalField, Q, Sum, Value
 from django.db.models.functions import Coalesce, ExtractMonth, ExtractYear
-import csv
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.staticfiles import finders
@@ -167,10 +166,11 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             diff_pct = round(((float(accepted_total) - float(prev_year_accepted)) / float(prev_year_accepted)) * 100, 1)
             year_vs_prev = {"prev_total": prev_year_accepted, "diff_pct": diff_pct}
 
-        customer_count = customer_queryset.count()
+        total_customers = Customer.objects.count()
+        customers_with_quotes = customer_queryset.count()
         active_customer_rate = 0
-        if Customer.objects.exists():
-            active_customer_rate = round((customer_count / Customer.objects.count()) * 100)
+        if total_customers:
+            active_customer_rate = round((customers_with_quotes / total_customers) * 100)
 
         # Datos para Chart.js
         chart_status_labels = ["Borrador", "Enviadas", "Aceptadas", "Rechazadas", "Expiradas"]
@@ -188,7 +188,8 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
         context.update(
             {
-                "customer_count": customer_count,
+                "customer_count": total_customers,
+                "customers_with_quotes": customers_with_quotes,
                 "model_count": CameraModel.objects.count(),
                 "quote_count": totals["total_quotes"],
                 "total_amount": totals["total_amount"],
@@ -830,48 +831,32 @@ def _get_report_queryset(request):
 @login_required
 @permission_required("quotes.view_quote", raise_exception=True)
 def report_export(request):
-    """Exporta el reporte filtrado a CSV."""
+    """Exporta el reporte filtrado a Excel con diseño."""
+    from quotes.excel_export import export_report_to_excel
+
     queryset = _get_report_queryset(request)
-    response = HttpResponse(content_type="text/csv; charset=utf-8")
-    response["Content-Disposition"] = 'attachment; filename="reporte_cotizaciones.csv"'
-    response.write("\ufeff")
-    writer = csv.writer(response)
-    writer.writerow(["Número", "Cliente", "Vendedor", "Estatus", "Total", "Moneda", "Vigencia", "Fecha emisión"])
     status_labels = dict(Quote.STATUS_CHOICES)
-    for q in queryset[:2000]:
-        writer.writerow([
-            q.quote_number,
-            q.customer.name,
-            q.sales_user.get_full_name() or q.sales_user.username,
-            status_labels.get(q.status, q.status),
-            q.total,
-            q.currency,
-            q.valid_until,
-            q.issue_date,
-        ])
+    content = export_report_to_excel(queryset, status_labels, max_rows=2000)
+    response = HttpResponse(
+        content,
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = 'attachment; filename="reporte_cotizaciones.xlsx"'
     return response
 
 
 @login_required
 @permission_required("quotes.view_quote", raise_exception=True)
 def quote_list_export(request):
-    """Exporta la lista de cotizaciones filtrada a CSV."""
+    """Exporta la lista de cotizaciones filtrada a Excel con diseño."""
+    from quotes.excel_export import export_quotes_to_excel
+
     queryset = _get_quote_list_queryset(request)
-    response = HttpResponse(content_type="text/csv; charset=utf-8")
-    response["Content-Disposition"] = 'attachment; filename="cotizaciones.csv"'
-    response.write("\ufeff")  # BOM para Excel UTF-8
-    writer = csv.writer(response)
-    writer.writerow(["Número", "Cliente", "Vendedor", "Estatus", "Total", "Moneda", "Vigencia", "Fecha emisión"])
     status_labels = dict(Quote.STATUS_CHOICES)
-    for q in queryset[:1000]:  # límite razonable
-        writer.writerow([
-            q.quote_number,
-            q.customer.name,
-            q.sales_user.get_full_name() or q.sales_user.username,
-            status_labels.get(q.status, q.status),
-            q.total,
-            q.currency,
-            q.valid_until,
-            q.issue_date,
-        ])
+    content = export_quotes_to_excel(queryset, status_labels, max_rows=1000)
+    response = HttpResponse(
+        content,
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = 'attachment; filename="cotizaciones.xlsx"'
     return response

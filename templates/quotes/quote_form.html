@@ -73,57 +73,63 @@
                 {% endfor %}
             </div>
 
-            <div class="card mt-3">
+            <div class="card mt-3 optional-services-card">
                 <div class="card-header">
                     <h3 class="card-title mb-0">Servicios opcionales</h3>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted small mb-3">Marque e indique el monto cuando aplique.</p>
-                    <div class="row">
-                        <div class="col-12 col-md-6 mb-2 mb-md-0">
-                            <div class="form-check mb-2">
-                                {{ form.cableado }}
-                                <label class="form-check-label" for="{{ form.cableado.id_for_label }}">Cableado</label>
+                    <p class="text-muted small mb-4">Marque e indique el monto cuando aplique.</p>
+                    <div class="optional-services-grid">
+                        <div class="optional-service-item">
+                            <div class="optional-service-header">
+                                <label class="optional-service-check">
+                                    {{ form.cableado }}
+                                    <span class="optional-service-label">Cableado</span>
+                                </label>
                             </div>
-                            <div class="form-group ml-0 ml-md-4">
+                            <div class="optional-service-monto">
                                 <label for="{{ form.cableado_monto.id_for_label }}">Monto</label>
                                 {{ form.cableado_monto }}
-                                {% for error in form.cableado_monto.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
+                                {% for error in form.cableado_monto.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                             </div>
                         </div>
-                        <div class="col-12 col-md-6 mb-2 mb-md-0">
-                            <div class="form-check mb-2">
-                                {{ form.instalacion }}
-                                <label class="form-check-label" for="{{ form.instalacion.id_for_label }}">Instalación</label>
+                        <div class="optional-service-item">
+                            <div class="optional-service-header">
+                                <label class="optional-service-check">
+                                    {{ form.instalacion }}
+                                    <span class="optional-service-label">Instalación</span>
+                                </label>
                             </div>
-                            <div class="form-group ml-0 ml-md-4">
+                            <div class="optional-service-monto">
                                 <label for="{{ form.instalacion_monto.id_for_label }}">Monto</label>
                                 {{ form.instalacion_monto }}
-                                {% for error in form.instalacion_monto.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
+                                {% for error in form.instalacion_monto.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                             </div>
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-12 col-md-6 mb-2 mb-md-0">
-                            <div class="form-check mb-2">
-                                {{ form.inyector_poe }}
-                                <label class="form-check-label" for="{{ form.inyector_poe.id_for_label }}">Inyector PoE</label>
+                        <div class="optional-service-item">
+                            <div class="optional-service-header">
+                                <label class="optional-service-check">
+                                    {{ form.inyector_poe }}
+                                    <span class="optional-service-label">Inyector PoE</span>
+                                </label>
                             </div>
-                            <div class="form-group ml-0 ml-md-4">
+                            <div class="optional-service-monto">
                                 <label for="{{ form.inyector_poe_monto.id_for_label }}">Monto</label>
                                 {{ form.inyector_poe_monto }}
-                                {% for error in form.inyector_poe_monto.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
+                                {% for error in form.inyector_poe_monto.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                             </div>
                         </div>
-                        <div class="col-12 col-md-6 mb-2 mb-md-0">
-                            <div class="form-check mb-2">
-                                {{ form.poe }}
-                                <label class="form-check-label" for="{{ form.poe.id_for_label }}">PoE</label>
+                        <div class="optional-service-item">
+                            <div class="optional-service-header">
+                                <label class="optional-service-check">
+                                    {{ form.poe }}
+                                    <span class="optional-service-label">PoE</span>
+                                </label>
                             </div>
-                            <div class="form-group ml-0 ml-md-4">
+                            <div class="optional-service-monto">
                                 <label for="{{ form.poe_monto.id_for_label }}">Monto</label>
                                 {{ form.poe_monto }}
-                                {% for error in form.poe_monto.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
+                                {% for error in form.poe_monto.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                             </div>
                         </div>
                     </div>
