@@ -13,7 +13,7 @@
         href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
-    <link rel="stylesheet" href="{% static 'css/custom.css' %}?v=20250318">
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}?v=20250324">
 </head>
 
 <body class="hold-transition sidebar-mini theme-dark">
@@ -150,9 +150,10 @@
     <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
     <script>
         $(function () {
-            $("input, select, textarea").addClass("form-control");
+            $("form:not([data-no-form-control-auto]) input, form:not([data-no-form-control-auto]) select, form:not([data-no-form-control-auto]) textarea").addClass("form-control");
             $("input[type=checkbox], input[type=radio]").removeClass("form-control").addClass("form-check-input");
             $("input[type=file]").addClass("form-control-file");
+            $("form[data-no-form-control-auto] input:not([type=checkbox]):not([type=radio]):not([type=file]), form[data-no-form-control-auto] select, form[data-no-form-control-auto] textarea").addClass("form-control");
 
             // Modal de confirmación: formularios con data-confirm-message
             $(document).on("submit", "form[data-confirm-message]", function (e) {

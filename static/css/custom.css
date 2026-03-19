@@ -321,9 +321,19 @@ body {
 }
 
 /* Formulario de usuario: checkboxes y roles */
-.user-form-card .form-group label {
+.user-form-card {
+    overflow: visible;
+}
+
+.user-form-card .card-body {
+    overflow: visible;
+}
+
+.user-form-card .form-group label,
+.user-form-card .form-check-label {
     color: var(--brand-text);
     font-weight: 500;
+    overflow: visible;
 }
 
 .user-form-card .form-text.text-muted {
@@ -331,46 +341,55 @@ body {
     font-size: 0.85rem;
 }
 
-.user-form-roles .roles-checkbox-group {
+
+.user-form-roles {
+    clear: both;
+}
+
+.user-form-roles .roles-simple {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
 }
 
-.user-form-roles .form-check {
-    margin: 0;
-    padding: 0;
+.user-form-roles .roles-simple .role-row {
+    width: 100%;
+}
+
+.user-form-roles .role-row {
     display: flex;
     align-items: center;
-}
-
-.user-form-roles .form-check-input {
-    flex-shrink: 0;
-    margin-right: 12px;
-}
-
-.user-form-roles .form-check-label {
-    padding: 12px 18px;
-    margin: 0;
+    gap: 12px;
+    padding: 10px 14px;
     background: rgba(16, 27, 40, 0.8);
     border: 1px solid rgba(86, 127, 175, 0.3);
-    border-radius: 10px;
+    border-radius: 8px;
+    overflow: visible;
+}
+
+.user-form-roles .role-row:has(.role-cb:checked) {
+    border-color: rgba(72, 146, 255, 0.6);
+    background: rgba(72, 146, 255, 0.12);
+}
+
+.user-form-roles .role-cb {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    position: static !important;
+    margin-left: 0 !important;
+}
+
+.user-form-roles .role-text {
+    margin: 0;
+    padding: 0;
+    font-weight: normal;
     cursor: pointer;
-    transition: all 0.2s ease;
     color: var(--brand-text);
-    flex: 1;
-    min-width: 120px;
-}
-
-.user-form-roles .form-check-label:hover {
-    border-color: rgba(98, 195, 255, 0.5);
-    background: rgba(20, 40, 65, 0.9);
-}
-
-.user-form-roles .form-check-input:checked + .form-check-label {
-    border-color: rgba(72, 146, 255, 0.7);
-    background: rgba(72, 146, 255, 0.15);
-    box-shadow: 0 0 0 1px rgba(72, 146, 255, 0.3);
+    flex: 1 1 auto;
+    min-width: fit-content;
+    overflow: visible;
 }
 
 .theme-dark .form-check-input {
@@ -398,10 +417,27 @@ body {
 
 /* Activo checkbox en formulario usuario */
 .user-form-card .form-check.mb-3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     padding: 12px 16px;
     background: rgba(16, 27, 40, 0.5);
     border-radius: 10px;
     border: 1px solid rgba(86, 127, 175, 0.2);
+    overflow: visible;
+}
+
+.user-form-card .form-check.mb-3 .form-check-input {
+    flex-shrink: 0;
+    order: -1;
+    position: static !important;
+    margin-left: 0 !important;
+}
+
+.user-form-card .form-check.mb-3 .form-check-label {
+    flex: 1 1 auto;
+    min-width: fit-content;
+    overflow: visible;
 }
 
 /* Quote form – Items table (bordes acorde al tema oscuro) */

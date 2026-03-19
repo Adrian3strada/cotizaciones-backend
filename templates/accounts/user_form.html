@@ -21,7 +21,7 @@
 
 <div class="card card-primary user-form-card">
     <div class="card-body">
-        <form method="post">
+        <form method="post" data-no-form-control-auto>
             {% csrf_token %}
             <div class="row">
                 {% for field in form %}
@@ -30,13 +30,17 @@
                         <div class="form-group mb-3 user-form-roles">
                             <label class="d-block mb-2">{{ field.label }}</label>
                             {% if field.field.queryset %}
-                            <div class="roles-checkbox-group">
-                                {{ field }}
+                            <div class="roles-simple">
+                                {% for choice in field.field.widget.choices %}
+                                <div class="role-row">
+                                    <input type="checkbox" name="{{ field.name }}" value="{{ choice.0 }}" id="id_{{ field.name }}_{{ forloop.counter0 }}" class="form-check-input role-cb"{% if field.value %}{% for g in field.value %}{% if choice.0 == g.pk %} checked{% endif %}{% endfor %}{% endif %}>
+                                    <label for="id_{{ field.name }}_{{ forloop.counter0 }}" class="role-text">{{ choice.1 }}</label>
+                                </div>
+                                {% endfor %}
                             </div>
                             {% else %}
-                            <p class="text-warning small mb-0"><i class="fas fa-exclamation-triangle mr-1"></i>No hay roles. Ejecuta en Railway: <code>railway run python manage.py setup_groups</code></p>
+                            <p class="text-warning small mb-0 mt-2"><i class="fas fa-exclamation-triangle mr-1"></i>No hay roles. Ejecuta: <code>railway run python manage.py setup_groups</code></p>
                             {% endif %}
-                            {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
                             {% for error in field.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
                         </div>
                         {% elif field.field.widget.input_type == 'checkbox' %}

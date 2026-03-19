@@ -9,7 +9,6 @@ class UserBaseForm(forms.ModelForm):
         queryset=Group.objects.all().order_by("name"),
         required=False,
         widget=forms.CheckboxSelectMultiple,
-        help_text="Admin, Ventas o Solo_lectura. Si no ves opciones, ejecuta: python manage.py setup_groups",
     )
 
     class Meta:

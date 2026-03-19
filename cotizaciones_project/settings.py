@@ -11,6 +11,10 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 import os
+import warnings
+
+# Suprimir aviso de dependencias de requests (urllib3/charset-normalizer)
+warnings.filterwarnings("ignore", message=".*doesn't match a supported version.*", module="requests")
 from pathlib import Path
 from urllib.parse import urlparse
 
