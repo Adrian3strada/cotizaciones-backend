@@ -32,10 +32,20 @@ from quotes.models import Quote, QuoteItem
 from quotes.signals import quote_item_deleted, quote_item_saved
 
 
+def _user_sees_only_own_quotes(request):
+    """True si el usuario solo debe ver sus propias cotizaciones (Ventas).
+    False si ve todas: superuser o Solo_lectura (solo view, sin add/change)."""
+    if request.user.is_superuser:
+        return False
+    if request.user.has_perm("quotes.add_quote") or request.user.has_perm("quotes.change_quote"):
+        return True
+    return False
+
+
 def _get_quote_for_user(request, pk):
     """Obtiene la cotización por pk; 404 si no existe o el usuario no tiene acceso."""
     qs = Quote.objects.all()
-    if not request.user.is_superuser:
+    if _user_sees_only_own_quotes(request):
         qs = qs.filter(sales_user=request.user)
     return get_object_or_404(qs, pk=pk)
 
@@ -46,7 +56,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         queryset = Quote.objects.all()
-        if not self.request.user.is_superuser:
+        if _user_sees_only_own_quotes(self.request):
             queryset = queryset.filter(sales_user=self.request.user)
 
         accepted_queryset = queryset.filter(status=Quote.STATUS_ACCEPTED)
@@ -218,10 +228,7 @@ class QuoteListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        if self.request.user.is_superuser:
-            context["customers"] = Customer.objects.values_list("id", "name").order_by("name")
-            context["sales_users"] = get_user_model().objects.values_list("id", "username").order_by("username")
-        else:
+        if _user_sees_only_own_quotes(self.request):
             context["customers"] = (
                 Customer.objects.filter(quotes__sales_user=self.request.user)
                 .distinct()
@@ -233,6 +240,9 @@ class QuoteListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
                 .objects.filter(id=self.request.user.id)
                 .values_list("id", "username")
             )
+        else:
+            context["customers"] = Customer.objects.values_list("id", "name").order_by("name")
+            context["sales_users"] = get_user_model().objects.values_list("id", "username").order_by("username")
         context["status_choices"] = Quote.STATUS_CHOICES
         q = self.request.GET.copy()
         if "page" in q:
@@ -267,7 +277,7 @@ class QuoteDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
             .select_related("customer", "contact", "sales_user")
             .prefetch_related("items__camera_model")
         )
-        if not self.request.user.is_superuser:
+        if _user_sees_only_own_quotes(self.request):
             queryset = queryset.filter(sales_user=self.request.user)
         return queryset
 
@@ -323,7 +333,7 @@ def _build_file_uri(path_value):
 def _apply_common_quote_filters(queryset, request, date_from=None, date_to=None):
     """Aplica filtros comunes: usuario, fechas, customer_id, sales_user_id.
     date_from/date_to opcionales: si no se pasan, se leen de request.GET."""
-    if not request.user.is_superuser:
+    if _user_sees_only_own_quotes(request):
         queryset = queryset.filter(sales_user=request.user)
     if date_from is None:
         date_from = parse_date(request.GET.get("date_from") or "")
@@ -668,7 +678,7 @@ def quote_pdf(request, pk):
 def report_view(request):
     current_year = timezone.localdate().year
     queryset = Quote.objects.all()
-    if not request.user.is_superuser:
+    if _user_sees_only_own_quotes(request):
         queryset = queryset.filter(sales_user=request.user)
     date_from = parse_date(request.GET.get("date_from") or "")
     date_to = parse_date(request.GET.get("date_to") or "")
