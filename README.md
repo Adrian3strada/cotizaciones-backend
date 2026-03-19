@@ -124,7 +124,7 @@ python manage.py migrate --noinput
 - En **Settings** → **Networking** → **Generate Domain**
 - Railway asignará una URL como `tu-app.up.railway.app`
 
-### 6. Superusuario (primera vez)
+### 6. Superusuario y roles (primera vez)
 
 Tras el primer deploy, ejecuta en la terminal (con Railway CLI vinculado):
 
@@ -132,6 +132,23 @@ Tras el primer deploy, ejecuta en la terminal (con Railway CLI vinculado):
 railway run python manage.py createsuperuser
 railway run python manage.py setup_groups
 ```
+
+> **Nota:** `setup_groups` también se ejecuta automáticamente en cada arranque del contenedor (ver `scripts/start.py`).
+
+### 7. Roles y permisos
+
+Los grupos creados por `setup_groups` son:
+
+| Grupo | Permisos |
+|-------|----------|
+| **Admin** | Todos (clientes, catálogo, cotizaciones, usuarios) |
+| **Ventas** | add, change, view (sin delete) |
+| **Solo_lectura** | Solo view |
+
+Para que un usuario tenga permisos según su rol:
+1. Edita el usuario en **Usuarios** → asigna el grupo (Admin, Ventas o Solo_lectura)
+2. Guarda
+3. El usuario debe **cerrar sesión y volver a entrar** para que los permisos se apliquen
 
 ---
 
