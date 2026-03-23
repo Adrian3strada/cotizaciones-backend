@@ -5,6 +5,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from catalog.models import CameraModel
 from customers.models import Customer
+from quotes.access import user_sees_only_own_quotes
 from quotes.models import Quote
 
 from .serializers import (
@@ -21,7 +22,7 @@ class CameraModelViewSet(viewsets.ModelViewSet):
     serializer_class = CameraModelSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ["currency", "brand"]
+    filterset_fields = ["brand"]
     search_fields = ["model_code", "name", "brand"]
     ordering_fields = ["model_code", "name", "base_price", "created_at"]
 
@@ -47,7 +48,7 @@ class QuoteViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        if not self.request.user.is_superuser:
+        if user_sees_only_own_quotes(self.request.user):
             qs = qs.filter(sales_user=self.request.user)
         return qs
 

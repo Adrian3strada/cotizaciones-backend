@@ -14,11 +14,24 @@ class UserBaseForm(forms.ModelForm):
     class Meta:
         model = get_user_model()
         fields = ["username", "first_name", "last_name", "email", "is_active", "groups"]
+        widgets = {
+            "username": forms.TextInput(attrs={"class": "form-control", "autocomplete": "username"}),
+            "first_name": forms.TextInput(attrs={"class": "form-control"}),
+            "last_name": forms.TextInput(attrs={"class": "form-control"}),
+            "email": forms.EmailInput(attrs={"class": "form-control", "autocomplete": "email"}),
+            "is_active": forms.CheckboxInput(attrs={"class": "form-check-input app-form-check-input"}),
+        }
 
 
 class UserCreateForm(UserBaseForm):
-    password1 = forms.CharField(label="Contraseña", widget=forms.PasswordInput)
-    password2 = forms.CharField(label="Confirmar contraseña", widget=forms.PasswordInput)
+    password1 = forms.CharField(
+        label="Contraseña",
+        widget=forms.PasswordInput(attrs={"class": "form-control", "autocomplete": "new-password"}),
+    )
+    password2 = forms.CharField(
+        label="Confirmar contraseña",
+        widget=forms.PasswordInput(attrs={"class": "form-control", "autocomplete": "new-password"}),
+    )
 
     class Meta(UserBaseForm.Meta):
         fields = UserBaseForm.Meta.fields + ["password1", "password2"]
@@ -46,12 +59,12 @@ class UserCreateForm(UserBaseForm):
 class UserUpdateForm(UserBaseForm):
     password1 = forms.CharField(
         label="Nueva contraseña",
-        widget=forms.PasswordInput,
+        widget=forms.PasswordInput(attrs={"class": "form-control", "autocomplete": "new-password"}),
         required=False,
     )
     password2 = forms.CharField(
         label="Confirmar nueva contraseña",
-        widget=forms.PasswordInput,
+        widget=forms.PasswordInput(attrs={"class": "form-control", "autocomplete": "new-password"}),
         required=False,
     )
 

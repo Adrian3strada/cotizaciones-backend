@@ -11,8 +11,22 @@ EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 class CustomerForm(forms.ModelForm):
     class Meta:
         model = Customer
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control"}),
+            "country_code": forms.TextInput(
+                attrs={"maxlength": 2, "class": "form-control", "placeholder": "MX"}
+            ),
+            "rfc": forms.TextInput(attrs={"class": "form-control"}),
+            "website": forms.URLInput(attrs={"class": "form-control", "placeholder": "https://"}),
+            "street_address": forms.TextInput(attrs={"class": "form-control"}),
+            "neighborhood": forms.TextInput(attrs={"class": "form-control"}),
+            "city": forms.TextInput(attrs={"class": "form-control"}),
+            "postal_code": forms.TextInput(attrs={"class": "form-control"}),
+            "phone": forms.TextInput(attrs={"class": "form-control"}),
+        }
         fields = [
             "name",
+            "country_code",
             "rfc",
             "website",
             "street_address",
@@ -47,6 +61,14 @@ class CustomerContactForm(forms.ModelForm):
             "position",
             "is_primary",
         ]
+        widgets = {
+            "customer": forms.Select(attrs={"class": "form-control"}),
+            "full_name": forms.TextInput(attrs={"class": "form-control"}),
+            "email": forms.EmailInput(attrs={"class": "form-control"}),
+            "mobile": forms.TextInput(attrs={"class": "form-control"}),
+            "position": forms.TextInput(attrs={"class": "form-control"}),
+            "is_primary": forms.CheckboxInput(attrs={"class": "form-check-input app-form-check-input"}),
+        }
 
     def clean_email(self):
         value = self.cleaned_data.get("email", "").strip()

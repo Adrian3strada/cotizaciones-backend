@@ -39,22 +39,23 @@
     </div>
 </div>
 
-<div class="card">
+<div class="card card-primary catalog-detail-card">
     <div class="card-body">
         <div class="row">
             <div class="col-md-6">
                 <p><strong>Marca:</strong> {{ object.brand|default:"-" }}</p>
                 <p><strong>Nombre:</strong> {{ object.name|default:"-" }}</p>
-                <p><strong>Precio base:</strong> {{ object.base_price }} {{ object.currency }}</p>
+                <p><strong>Precio base (USD):</strong> {{ object.base_price }}</p>
+                <p><strong>Activo:</strong> {% if object.is_active %}Sí{% else %}No{% endif %}</p>
             </div>
             <div class="col-md-6">
-                <p><strong>Descripción:</strong> {{ object.description|default:"-" }}</p>
-                <p>
+                <p><strong>Descripción:</strong> {{ object.description|default:"-"|linebreaksbr }}</p>
+                <p class="mb-0">
                     <strong>Ficha técnica:</strong>
                     {% if object.datasheet_file %}
                     <a href="{{ object.datasheet_file.url }}">Descargar</a>
                     {% else %}
-                    -
+                    <span class="text-muted">—</span>
                     {% endif %}
                 </p>
             </div>

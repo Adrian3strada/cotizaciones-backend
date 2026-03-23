@@ -13,9 +13,21 @@ class CameraModelForm(forms.ModelForm):
             "description",
             "datasheet_file",
             "base_price",
-            "currency",
             "is_active",
         ]
+        widgets = {
+            "brand": forms.TextInput(attrs={"class": "form-control", "autocomplete": "organization"}),
+            "model_code": forms.TextInput(attrs={"class": "form-control", "autocomplete": "off"}),
+            "name": forms.TextInput(attrs={"class": "form-control"}),
+            "description": forms.Textarea(attrs={"class": "form-control", "rows": 4}),
+            "datasheet_file": forms.ClearableFileInput(
+                attrs={"class": "form-control catalog-file-input"}
+            ),
+            "base_price": forms.NumberInput(
+                attrs={"class": "form-control", "step": "0.01", "min": "0", "inputmode": "decimal"}
+            ),
+            "is_active": forms.CheckboxInput(attrs={"class": "form-check-input catalog-active-cb"}),
+        }
 
     def clean_base_price(self):
         base_price = self.cleaned_data.get("base_price")

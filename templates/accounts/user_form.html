@@ -19,7 +19,7 @@
     </div>
 </div>
 
-<div class="card card-primary user-form-card">
+<div class="card card-primary app-form-card user-form-card">
     <div class="card-body">
         <form method="post" data-no-form-control-auto>
             {% csrf_token %}
@@ -44,13 +44,13 @@
                             {% for error in field.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
                         </div>
                         {% elif field.field.widget.input_type == 'checkbox' %}
-                            <div class="form-check mb-3">
+                            <div class="app-form-check-row mb-2">
                                 {{ field }}
-                                <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                {% for error in field.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                {% endfor %}
+                                <label class="mb-0" for="{{ field.id_for_label }}">{{ field.label }}</label>
                             </div>
+                            {% for error in field.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
                         {% else %}
                             <div class="form-group">
                                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>
@@ -66,9 +66,9 @@
                     </div>
                 {% endfor %}
             </div>
-            <div class="mt-3">
-                <button type="submit" class="btn btn-primary">Guardar</button>
-                <a class="btn btn-secondary" href="{% url 'accounts:list' %}">Cancelar</a>
+            <div class="app-form-actions">
+                <button type="submit" class="btn btn-primary px-4">Guardar</button>
+                <a class="btn btn-secondary px-4" href="{% url 'accounts:list' %}">Cancelar</a>
             </div>
         </form>
     </div>

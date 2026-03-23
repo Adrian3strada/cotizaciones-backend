@@ -74,6 +74,15 @@ def _fmt_money(val):
     return f"${v:,.2f}"
 
 
+def _currency_suffix(moneda_code):
+    c = (moneda_code or "MXN").strip().upper()
+    if c == "USD":
+        return " USD"
+    if c == "MXN":
+        return " MXN"
+    return f" {c}"
+
+
 def _parse_terms(terms_text):
     """Extrae Forma de Pago, Tiempo de Entrega, Garantía, Lugar de quote.terms."""
     result = {"payment": "", "delivery": "", "warranty": "", "place": ""}
@@ -115,6 +124,7 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
     contact = quote.contact
     col_text = f"{cust.neighborhood or ''} {cust.city or ''}".strip()
     moneda_display = quote.currency or "MXN"
+    moneda_suffix = _currency_suffix(moneda_display)
 
     M = 45  # margen
     LW = 120  # ancho logo
@@ -335,7 +345,7 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
                 y_row += ROW_H
                 partida += 1
 
-    # Descuento antes del total
+    # Descuento (cotización) y total de la partida principal (productos + IVA). Los opcionales van aparte abajo.
     disc = quote.special_discount_amount or Decimal("0")
     if disc != 0:
         pct = quote.special_discount_percent or 0
@@ -347,35 +357,58 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
         c.drawRightString(COL_TOTAL_RIGHT - pad, Y(y_row), _truncate_to_width(c, f"-{_fmt_money(disc)}", W_TOTAL))
         y_row += ROW_H
 
+    total_principal = quote.products_total_with_tax
+
     c.setFont("Helvetica-Bold", 7)
-    c.drawCentredString(COL_PRICE_LEFT + W_PRICE/2, Y(y_row + 6), "Total")
-    c.drawRightString(COL_TOTAL_RIGHT - pad, Y(y_row + 6), _truncate_to_width(c, _fmt_money(quote.total) + " MX", W_TOTAL, size=7))
+    c.drawCentredString(COL_PRICE_LEFT + W_PRICE / 2, Y(y_row + 6), "Total")
+    c.drawRightString(
+        COL_TOTAL_RIGHT - pad,
+        Y(y_row + 6),
+        _truncate_to_width(c, _fmt_money(total_principal) + moneda_suffix, W_TOTAL, size=7),
+    )
     y_row += ROW_H + 16
 
-    # Espacio para bajar los opcionales (hasta el área indicada)
+    # Opcionales al fondo del área de tabla; las dos líneas justo encima de "Opcional" (tras el hueco).
+    # Margen suficiente bajo la 2ª línea para que no corte el texto (drawString usa baseline).
+    SEP_LINE_GAP = 3
+    SEP_MARGIN_BELOW = 9
+    SEP_LINES_H = SEP_LINE_GAP + SEP_MARGIN_BELOW
     TABLE_BOTTOM_Y = 680
-    space_for_opts = len(optional_rows) * ROW_H + ROW_H + 10 if optional_rows else 0  # +ROW_H para "Opcional"
+    if optional_rows:
+        space_for_opts = SEP_LINES_H + (1 + len(optional_rows)) * ROW_H + 10
+    else:
+        space_for_opts = 0
     gap = max(0, TABLE_BOTTOM_Y - y_row - space_for_opts)
     y_row += gap
 
-    # Etiqueta "Opcional" antes de los items opcionales
     if optional_rows:
+        c.setStrokeColorRGB(0, 0, 0)
+        c.setLineWidth(0.75)
+        y_line1 = y_row
+        y_line2 = y_row + SEP_LINE_GAP
+        c.line(COL_PARTIDA, Y(y_line1), COL_TOTAL_RIGHT, Y(y_line1))
+        c.line(COL_PARTIDA, Y(y_line2), COL_TOTAL_RIGHT, Y(y_line2))
+        y_row = y_line2 + SEP_MARGIN_BELOW
+
         c.setFont("Helvetica-Bold", 7)
         c.drawString(COL_DESC + pad, Y(y_row), "Opcional")
         y_row += ROW_H
 
-    # Opcionales abajo (después del Total)
-    for opt in optional_rows:
-        c.setFont("Helvetica", 7)
-        c.drawCentredString(COL_PARTIDA + W_PARTIDA/2, Y(y_row), _truncate_to_width(c, str(opt.get("partida", partida)), W_PARTIDA))
-        c.drawString(COL_PARTE + pad, Y(y_row), _truncate_to_width(c, "—", W_PARTE))
-        c.drawString(COL_DESC + pad, Y(y_row), _truncate_to_width(c, opt.get("desc", ""), W_DESC))
-        c.drawCentredString(COL_UNIT + W_UNIT/2, Y(y_row), _truncate_to_width(c, "Serv.", W_UNIT))
-        c.drawCentredString(COL_QTY + W_QTY/2, Y(y_row), _truncate_to_width(c, "1", W_QTY))
-        c.drawRightString(COL_TOTAL_LEFT - pad, Y(y_row), _truncate_to_width(c, _fmt_money(opt.get("monto")), W_PRICE, size=7))
-        c.setFont("Helvetica-Bold", 7)
-        c.drawRightString(COL_TOTAL_RIGHT - pad, Y(y_row), _truncate_to_width(c, _fmt_money(opt.get("monto")) + " MX", W_TOTAL))
-        y_row += ROW_H
+        for opt in optional_rows:
+            c.setFont("Helvetica", 7)
+            c.drawCentredString(COL_PARTIDA + W_PARTIDA/2, Y(y_row), _truncate_to_width(c, str(opt.get("partida", partida)), W_PARTIDA))
+            c.drawString(COL_PARTE + pad, Y(y_row), _truncate_to_width(c, "—", W_PARTE))
+            c.drawString(COL_DESC + pad, Y(y_row), _truncate_to_width(c, opt.get("desc", ""), W_DESC))
+            c.drawCentredString(COL_UNIT + W_UNIT/2, Y(y_row), _truncate_to_width(c, "Serv.", W_UNIT))
+            c.drawCentredString(COL_QTY + W_QTY/2, Y(y_row), _truncate_to_width(c, "1", W_QTY))
+            c.drawRightString(COL_TOTAL_LEFT - pad, Y(y_row), _truncate_to_width(c, _fmt_money(opt.get("monto")), W_PRICE, size=7))
+            c.setFont("Helvetica-Bold", 7)
+            c.drawRightString(
+                COL_TOTAL_RIGHT - pad,
+                Y(y_row),
+                _truncate_to_width(c, _fmt_money(opt.get("monto")) + moneda_suffix, W_TOTAL),
+            )
+            y_row += ROW_H
 
     # La tabla de partidas se extiende hasta el pie de página
     BOTTOM_MARGIN = 60  # margen inferior mínimo (pts desde el borde)
@@ -467,14 +500,30 @@ def build_quote_pdf(quote, company, vigencia_texto, issue_date_formatted):
     y2_center = row1_bottom + ROW2_H / 2 - 4
     c.drawString(FOOTER_LEFT + pad_f, Y(y2_center), _truncate_to_width(c, sales_name, W_LEFT))
     c.drawString(FOOTER_MID + pad_f, Y(y2_center), _truncate_to_width(c, authorized, W_MID))
+    precios_en = "USD" if moneda_display == "USD" else "Moneda nacional (MXN)"
     obs_items = [
-        ("Precios en:", _truncate_to_width(c, "Moneda nacional" + (" /USD" if moneda_display == "USD" else ""), W_OBS_VAL)),
+        ("Precios en:", _truncate_to_width(c, precios_en, W_OBS_VAL)),
+    ]
+    if moneda_display == "MXN" and getattr(quote, "usd_mxn_rate", None):
+        obs_items.append(
+            (
+                "Tipo de cambio:",
+                _truncate_to_width(
+                    c,
+                    f"1 USD = {_fmt_money(quote.usd_mxn_rate)} MXN (lista en USD)",
+                    W_OBS_VAL,
+                ),
+            )
+        )
+    obs_items.extend(
+        [
         ("IVA", "Precio más IVA"),
         ("Forma de Pago:", _truncate_to_width(c, payment_form, W_OBS_VAL) or ""),
         ("Tiempo de Entrega:", _truncate_to_width(c, delivery_time, W_OBS_VAL) or ""),
         ("Garantía:", _truncate_to_width(c, warranty, W_OBS_VAL) or ""),
         ("Lugar de entrega:", _truncate_to_width(c, delivery_place or "Tienda", W_OBS_VAL) or "Tienda"),
-    ]
+        ]
+    )
     for i, (label, value) in enumerate(obs_items):
         y_line = y2_base + i * line_h
         c.drawString(obs_labels_x, Y(y_line), label)

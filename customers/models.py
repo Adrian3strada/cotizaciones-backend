@@ -4,6 +4,13 @@ from django.urls import reverse
 
 class Customer(models.Model):
     name = models.CharField("Nombre", max_length=255)
+    country_code = models.CharField(
+        "País (ISO)",
+        max_length=2,
+        default="MX",
+        blank=True,
+        help_text="MX = cliente en México (cotización usual en pesos). Otro código (ej. US) sugiere cotización en USD.",
+    )
     rfc = models.CharField("RFC", max_length=50, blank=True)
     website = models.URLField("Sitio web", blank=True)
     street_address = models.CharField("Calle y No.", max_length=255, blank=True)
@@ -26,6 +33,11 @@ class Customer(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    def default_quote_currency(self) -> str:
+        """Moneda sugerida para cotizar: MXN si el cliente es México, USD en caso contrario."""
+        code = (self.country_code or "MX").strip().upper() or "MX"
+        return "MXN" if code == "MX" else "USD"
 
     def get_absolute_url(self):
         return reverse("customers:detail", kwargs={"pk": self.pk})

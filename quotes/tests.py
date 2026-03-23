@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -23,8 +23,7 @@ class QuoteModelTests(TestCase):
         self.camera = CameraModel.objects.create(
             model_code="CAM-001",
             name="Cámara Test",
-            base_price=Decimal("10000.00"),
-            currency=CameraModel.CURRENCY_MXN,
+            base_price=Decimal("500.00"),
         )
 
     def test_quote_creation_generates_number(self):
@@ -35,6 +34,7 @@ class QuoteModelTests(TestCase):
             sales_user=self.user,
             status=Quote.STATUS_DRAFT,
             currency=Quote.CURRENCY_MXN,
+            usd_mxn_rate=Decimal("20.00"),
         )
         quote.save()
         self.assertTrue(quote.quote_number.startswith("SCP-"))
@@ -46,12 +46,13 @@ class QuoteModelTests(TestCase):
             sales_user=self.user,
             status=Quote.STATUS_DRAFT,
             currency=Quote.CURRENCY_MXN,
+            usd_mxn_rate=Decimal("20.00"),
         )
         QuoteItem.objects.create(
             quote=quote,
             camera_model=self.camera,
             quantity=2,
-            unit_price=Decimal("10000.00"),
+            unit_price=Decimal("0.00"),
             discount_percent=Decimal("10.00"),
         )
         quote.recalculate_totals()
@@ -59,6 +60,10 @@ class QuoteModelTests(TestCase):
         # Subtotal es suma de line_subtotal (con descuento 10%: 20000 - 2000 = 18000)
         self.assertEqual(quote.subtotal, Decimal("18000.00"))
         self.assertGreater(quote.total, 0)
+        self.assertEqual(
+            quote.products_total_with_tax,
+            quote.products_total_after_discount + quote.tax_amount,
+        )
 
     def test_get_optional_rows_empty(self):
         quote = Quote.objects.create(
@@ -67,6 +72,7 @@ class QuoteModelTests(TestCase):
             sales_user=self.user,
             status=Quote.STATUS_DRAFT,
             currency=Quote.CURRENCY_MXN,
+            usd_mxn_rate=Decimal("20.00"),
         )
         self.assertEqual(len(quote.get_optional_rows()), 0)
 
@@ -77,13 +83,29 @@ class QuoteModelTests(TestCase):
             sales_user=self.user,
             status=Quote.STATUS_DRAFT,
             currency=Quote.CURRENCY_MXN,
-            cableado=True,
-            cableado_monto=Decimal("1000.00"),
+            usd_mxn_rate=Decimal("20.00"),
+            poe=True,
+            poe_monto=Decimal("1000.00"),
         )
         rows = quote.get_optional_rows()
         self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0]["desc"], "Cableado")
+        self.assertEqual(rows[0]["desc"], "PoE")
         self.assertEqual(rows[0]["monto"], Decimal("1000.00"))
+
+    def test_get_optional_rows_matches_billed_total(self):
+        """Solo filas con checkbox activo; monto sin marcar no aparece en PDF ni en total."""
+        quote = Quote.objects.create(
+            quote_number="SCP-2026-000004",
+            customer=self.customer,
+            sales_user=self.user,
+            status=Quote.STATUS_DRAFT,
+            currency=Quote.CURRENCY_MXN,
+            usd_mxn_rate=Decimal("20.00"),
+            poe=False,
+            poe_monto=Decimal("500.00"),
+        )
+        self.assertEqual(len(quote.get_optional_rows()), 0)
+        self.assertEqual(quote.get_optional_services_total(), Decimal("0.00"))
 
 
 class QuoteViewTests(TestCase):
@@ -101,8 +123,7 @@ class QuoteViewTests(TestCase):
         )
         self.camera = CameraModel.objects.create(
             model_code="CAM-001",
-            base_price=Decimal("5000.00"),
-            currency=CameraModel.CURRENCY_MXN,
+            base_price=Decimal("250.00"),
         )
         self.quote = Quote.objects.create(
             quote_number="SCP-2026-000010",
@@ -111,12 +132,13 @@ class QuoteViewTests(TestCase):
             sales_user=self.user,
             status=Quote.STATUS_DRAFT,
             currency=Quote.CURRENCY_MXN,
+            usd_mxn_rate=Decimal("20.00"),
         )
         QuoteItem.objects.create(
             quote=self.quote,
             camera_model=self.camera,
             quantity=1,
-            unit_price=Decimal("5000.00"),
+            unit_price=Decimal("0.00"),
         )
         self.quote.recalculate_totals()
 
@@ -169,12 +191,40 @@ class QuoteViewTests(TestCase):
             sales_user=other_user,
             status=Quote.STATUS_DRAFT,
             currency=Quote.CURRENCY_MXN,
+            usd_mxn_rate=Decimal("20.00"),
         )
         self.client.login(username="vendedor", password="testpass123")
         response = self.client.get(
             reverse("quotes:detail", kwargs={"pk": other_quote.pk})
         )
         self.assertIn(response.status_code, (302, 404))
+
+    def test_admin_sees_other_vendor_quotes(self):
+        """Usuario en grupo Admin ve cotizaciones de cualquier vendedor."""
+        admin_user = User.objects.create_user(username="admin", password="testpass123")
+        admin_group, _ = Group.objects.get_or_create(name="Admin")
+        admin_user.groups.add(admin_group)
+        ct = ContentType.objects.get(app_label="quotes", model="quote")
+        perms = Permission.objects.filter(
+            content_type=ct,
+            codename__in=("add_quote", "change_quote", "view_quote"),
+        )
+        admin_user.user_permissions.add(*perms)
+        other_user = User.objects.create_user(username="otro2", password="testpass123")
+        other_quote = Quote.objects.create(
+            quote_number="SCP-2026-000088",
+            customer=self.customer,
+            sales_user=other_user,
+            status=Quote.STATUS_DRAFT,
+            currency=Quote.CURRENCY_MXN,
+            usd_mxn_rate=Decimal("20.00"),
+        )
+        self.client.login(username="admin", password="testpass123")
+        response = self.client.get(
+            reverse("quotes:detail", kwargs={"pk": other_quote.pk})
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "SCP-2026-000088")
 
     def test_full_flow_send_accept(self):
         """Flujo: enviar cotización en borrador, luego aceptar."""

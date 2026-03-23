@@ -122,11 +122,11 @@ class Command(BaseCommand):
             )
 
         camera_models = [
-            ("CNT-AX100", "Axis", "Contador AX100", Decimal("18500.00")),
-            ("CNT-AX200", "Axis", "Contador AX200", Decimal("24800.00")),
-            ("CNT-HK310", "Hikvision", "Conteo People HK310", Decimal("16200.00")),
-            ("CNT-HK420", "Hikvision", "Conteo People HK420", Decimal("21500.00")),
-            ("CNT-DA500", "Dahua", "Conteo Inteligente DA500", Decimal("19800.00")),
+            ("CNT-AX100", "Axis", "Contador AX100", Decimal("925.00")),
+            ("CNT-AX200", "Axis", "Contador AX200", Decimal("1240.00")),
+            ("CNT-HK310", "Hikvision", "Conteo People HK310", Decimal("810.00")),
+            ("CNT-HK420", "Hikvision", "Conteo People HK420", Decimal("1075.00")),
+            ("CNT-DA500", "Dahua", "Conteo Inteligente DA500", Decimal("990.00")),
         ]
         camera_objs = []
         for code, brand, name, price in camera_models:
@@ -136,7 +136,6 @@ class Command(BaseCommand):
                     "brand": brand,
                     "name": name,
                     "base_price": price,
-                    "currency": CameraModel.CURRENCY_MXN,
                 },
             )
             camera_objs.append(camera)
@@ -158,6 +157,7 @@ class Command(BaseCommand):
                 sales_user=user,
                 valid_until=today + timezone.timedelta(days=30),
                 currency=Quote.CURRENCY_MXN,
+                usd_mxn_rate=Decimal("20.00"),
                 notes="SEED_SAMPLE",
                 terms="Entrega 10-15 días hábiles. Pago 50% anticipo, 50% contra entrega.",
             )

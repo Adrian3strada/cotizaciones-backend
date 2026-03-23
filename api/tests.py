@@ -29,8 +29,7 @@ class ApiTests(TestCase):
         self.camera = CameraModel.objects.create(
             model_code="CAM-API",
             name="Cámara API",
-            base_price=Decimal("8000.00"),
-            currency=CameraModel.CURRENCY_MXN,
+            base_price=Decimal("400.00"),
         )
         self.quote = Quote.objects.create(
             quote_number="SCP-2026-000100",
@@ -39,12 +38,13 @@ class ApiTests(TestCase):
             sales_user=self.user,
             status=Quote.STATUS_ACCEPTED,
             currency=Quote.CURRENCY_MXN,
+            usd_mxn_rate=Decimal("20.00"),
         )
         QuoteItem.objects.create(
             quote=self.quote,
             camera_model=self.camera,
             quantity=1,
-            unit_price=Decimal("8000.00"),
+            unit_price=Decimal("0.00"),
         )
         self.quote.recalculate_totals()
 

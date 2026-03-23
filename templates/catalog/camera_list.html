@@ -37,8 +37,7 @@
                     <th>Código</th>
                     <th>Marca</th>
                     <th>Nombre</th>
-                    <th>Precio base</th>
-                    <th>Moneda</th>
+                    <th>Precio base (USD)</th>
                     <th class="text-right">Acciones</th>
                 </tr>
             </thead>
@@ -48,8 +47,7 @@
                     <td data-label="Código"><a href="{% url 'catalog:detail' camera.pk %}">{{ camera.model_code }}</a></td>
                     <td data-label="Marca">{{ camera.brand|default:"-" }}</td>
                     <td data-label="Nombre">{{ camera.name|default:"-" }}</td>
-                    <td data-label="Precio base">{{ camera.base_price }}</td>
-                    <td data-label="Moneda">{{ camera.currency }}</td>
+                    <td data-label="Precio base (USD)">{{ camera.base_price }}</td>
                     <td data-label="Acciones" class="text-right">
                         {% if perms.catalog.change_cameramodel %}
                             <a class="btn btn-sm btn-outline-primary" href="{% url 'catalog:update' camera.pk %}">Editar</a>
@@ -61,7 +59,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center py-5">
+                    <td colspan="5" class="text-center py-5">
                         <p class="mb-2 text-muted"><i class="fas fa-camera fa-3x"></i></p>
                         <p class="mb-3">No hay modelos en el catálogo.</p>
                         {% if perms.catalog.add_cameramodel %}

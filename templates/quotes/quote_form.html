@@ -19,9 +19,9 @@
     </div>
 </div>
 
-<div class="card card-primary">
+<div class="card card-primary quote-form-card">
     <div class="card-body">
-        <form method="post" id="quote-form">
+        <form method="post" id="quote-form" class="quote-form">
             {% csrf_token %}
             {% if form.errors or formset.errors %}
             <div class="alert alert-danger">
@@ -78,7 +78,7 @@
                     <h3 class="card-title mb-0">Servicios opcionales</h3>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted small mb-4">Marque e indique el monto cuando aplique.</p>
+                    <p class="optional-services-hint small mb-3 mb-md-4">Marque e indique el monto cuando aplique.</p>
                     <div class="optional-services-grid">
                         <div class="optional-service-item">
                             <div class="optional-service-header">
@@ -109,19 +109,6 @@
                         <div class="optional-service-item">
                             <div class="optional-service-header">
                                 <label class="optional-service-check">
-                                    {{ form.inyector_poe }}
-                                    <span class="optional-service-label">Inyector PoE</span>
-                                </label>
-                            </div>
-                            <div class="optional-service-monto">
-                                <label for="{{ form.inyector_poe_monto.id_for_label }}">Monto</label>
-                                {{ form.inyector_poe_monto }}
-                                {% for error in form.inyector_poe_monto.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                            </div>
-                        </div>
-                        <div class="optional-service-item">
-                            <div class="optional-service-header">
-                                <label class="optional-service-check">
                                     {{ form.poe }}
                                     <span class="optional-service-label">PoE</span>
                                 </label>
@@ -143,7 +130,7 @@
                         <i class="fas fa-plus mr-1"></i> Agregar item
                     </button>
                 </div>
-                <div class="card-body table-responsive p-0 table-responsive-cards">
+                <div class="card-body table-responsive px-0 pt-3 pb-0 table-responsive-cards quote-items-card-body">
                     {{ formset.management_form }}
 
                     {% if formset.non_form_errors %}
@@ -159,10 +146,8 @@
                             <tr>
                                 <th>Modelo</th>
                                 <th>Cantidad</th>
-                                <th>Precio unitario (fijo)</th>
+                                <th class="th-precio-unitario">Precio unitario <span class="precio-unitario-hint">(USD × TC en MXN)</span></th>
                                 <th>Descuento (%)</th>
-                                <th>Grupo</th>
-                                <th>Orden</th>
                                 <th>Eliminar</th>
                             </tr>
                         </thead>
@@ -193,33 +178,21 @@
                                     <div class="text-danger">{{ error }}</div>
                                     {% endfor %}
                                 </td>
-                                <td data-label="Grupo">
-                                    {{ item_form.group_name }}
-                                    {% for error in item_form.group_name.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                    {% endfor %}
-                                </td>
-                                <td data-label="Orden">
-                                    {{ item_form.order_in_group }}
-                                    {% for error in item_form.order_in_group.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                    {% endfor %}
-                                </td>
                                 <td data-label="Eliminar" class="text-center item-row-actions">
                                     {% if item_form.instance.pk %}
-                                    <label class="mb-0 d-inline-flex align-items-center">
-                                        {{ item_form.DELETE }}
-                                        <span class="ml-1">Quitar</span>
-                                    </label>
+                                    <div class="item-delete-wrap">
+                                        <span class="sr-only">{{ item_form.DELETE }}</span>
+                                        <label class="item-delete-label mb-0" for="{{ item_form.DELETE.id_for_label }}">Quitar</label>
+                                    </div>
                                     {% else %}
-                                    <a href="#" class="remove-item-row text-danger">Quitar</a>
+                                    <a href="#" class="btn btn-sm btn-outline-danger remove-item-row">Quitar</a>
                                     {% endif %}
                                 </td>
                             </tr>
 
                             {% if item_form.non_field_errors %}
                             <tr>
-                                <td colspan="7">{{ item_form.non_field_errors }}</td>
+                                <td colspan="5">{{ item_form.non_field_errors }}</td>
                             </tr>
                             {% endif %}
                             {% endfor %}
@@ -228,9 +201,9 @@
                 </div>
             </div>
 
-            <div class="mt-3">
-                <button type="submit" class="btn btn-primary">Guardar</button>
-                <a class="btn btn-secondary" href="{% url 'quotes:list' %}">Cancelar</a>
+            <div class="quote-form-actions">
+                <button type="submit" class="btn btn-primary px-4">Guardar</button>
+                <a class="btn btn-secondary px-4" href="{% url 'quotes:list' %}">Cancelar</a>
             </div>
         </form>
 
@@ -240,9 +213,7 @@
                 <td data-label="Cantidad">{{ formset.empty_form.quantity }}</td>
                 <td data-label="Precio unit.">{{ formset.empty_form.unit_price }}</td>
                 <td data-label="Descuento (%)">{{ formset.empty_form.discount_percent }}</td>
-                <td data-label="Grupo">{{ formset.empty_form.group_name }}</td>
-                <td data-label="Orden">{{ formset.empty_form.order_in_group }}</td>
-                <td data-label="Eliminar" class="text-center item-row-actions"><a href="#" class="remove-item-row text-danger">Quitar</a></td>
+                <td data-label="Eliminar" class="text-center item-row-actions"><a href="#" class="btn btn-sm btn-outline-danger remove-item-row">Quitar</a></td>
             </tr>
         </template>
     </div>
@@ -250,13 +221,64 @@
 
 <script>
     window.cameraModelPrices = {{ camera_model_prices|default:"{}"|safe }};
+    window.customerQuoteCurrency = {{ customer_quote_currency_json|default:"{}"|safe }};
+    window.defaultUsdMxnRate = "{{ default_usd_mxn_rate|default:'20.00' }}";
     (function () {
         const customerSelect = document.getElementById("id_customer");
         const contactSelect = document.getElementById("id_contact");
+        const currencySelect = document.getElementById("id_currency");
+        const usdMxnInput = document.getElementById("id_usd_mxn_rate");
         const addButton = document.getElementById("add-item-row");
         const formsetBody = document.getElementById("items-formset");
         const emptyRowTemplate = document.getElementById("empty-form-row");
         const totalForms = document.getElementById("id_{{ formset.prefix }}-TOTAL_FORMS");
+
+        function getQuoteCurrency() {
+            return currencySelect && currencySelect.value ? currencySelect.value : "USD";
+        }
+
+        function getUsdMxnRate() {
+            if (!usdMxnInput || !usdMxnInput.value) return null;
+            const n = parseFloat(usdMxnInput.value);
+            return isNaN(n) ? null : n;
+        }
+
+        function unitPriceForModel(modelId) {
+            const usdStr = window.cameraModelPrices[modelId];
+            if (usdStr === undefined) return "";
+            const usd = parseFloat(usdStr);
+            if (isNaN(usd)) return "";
+            if (getQuoteCurrency() === "MXN") {
+                const r = getUsdMxnRate();
+                if (r && r > 0) return (usd * r).toFixed(2);
+            }
+            return usdStr;
+        }
+
+        function refreshAllItemUnitPrices() {
+            if (!formsetBody || !window.cameraModelPrices) return;
+            formsetBody.querySelectorAll("select[name*='camera_model']").forEach(function (sel) {
+                if (!sel.value) return;
+                const row = sel.closest("tr");
+                if (!row) return;
+                const unitPriceInput = row.querySelector('input[name*="unit_price"]');
+                if (!unitPriceInput) return;
+                const p = unitPriceForModel(sel.value);
+                if (p !== "") unitPriceInput.value = p;
+            });
+        }
+
+        function applyCustomerDefaultCurrency() {
+            if (!customerSelect) return;
+            const map = window.customerQuoteCurrency || {};
+            const cur = map[customerSelect.value];
+            if (!cur || !currencySelect) return;
+            currencySelect.value = cur;
+            if (cur === "MXN" && usdMxnInput && !usdMxnInput.value.trim()) {
+                usdMxnInput.value = window.defaultUsdMxnRate || "";
+            }
+            refreshAllItemUnitPrices();
+        }
 
         if (formsetBody && window.cameraModelPrices) {
             formsetBody.addEventListener("change", function (e) {
@@ -265,10 +287,21 @@
                     if (!row) return;
                     const unitPriceInput = row.querySelector('input[name*="unit_price"]');
                     if (!unitPriceInput) return;
-                    const price = window.cameraModelPrices[e.target.value];
-                    unitPriceInput.value = price !== undefined ? price : "";
+                    const p = unitPriceForModel(e.target.value);
+                    unitPriceInput.value = p !== "" ? p : "";
                 }
             });
+        }
+
+        if (currencySelect) {
+            currencySelect.addEventListener("change", function () {
+                if (getQuoteCurrency() !== "MXN" && usdMxnInput) usdMxnInput.value = "";
+                refreshAllItemUnitPrices();
+            });
+        }
+        if (usdMxnInput) {
+            usdMxnInput.addEventListener("change", refreshAllItemUnitPrices);
+            usdMxnInput.addEventListener("input", refreshAllItemUnitPrices);
         }
 
         function setContactOptions(contacts, selectedId) {
@@ -325,7 +358,10 @@
         }
 
         if (customerSelect) {
-            customerSelect.addEventListener("change", () => loadContacts(customerSelect.value));
+            customerSelect.addEventListener("change", function () {
+                loadContacts(customerSelect.value);
+                applyCustomerDefaultCurrency();
+            });
             if (customerSelect.value) loadContacts(customerSelect.value);
             else setContactOptions([], null);
             // Búsqueda de cliente: filtrar opciones al escribir

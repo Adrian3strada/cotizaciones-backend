@@ -54,6 +54,14 @@ class Quote(models.Model):
     issue_date = models.DateField("Fecha de emisión", default=timezone.localdate)
     valid_until = models.DateField("Vigencia")
     currency = models.CharField("Moneda", max_length=3, choices=CURRENCY_CHOICES)
+    usd_mxn_rate = models.DecimalField(
+        "Tipo de cambio (MXN por 1 USD)",
+        max_digits=12,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="Obligatorio si la moneda es MXN. Los precios de lista del catálogo están en USD.",
+    )
     subtotal = models.DecimalField(
         "Subtotal", max_digits=14, decimal_places=2, default=Decimal("0.00")
     )
@@ -91,14 +99,6 @@ class Quote(models.Model):
     instalacion = models.BooleanField("Instalación", default=False)
     instalacion_monto = models.DecimalField(
         "Instalación (monto)",
-        max_digits=14,
-        decimal_places=2,
-        default=Decimal("0.00"),
-        blank=True,
-    )
-    inyector_poe = models.BooleanField("Inyector PoE", default=False)
-    inyector_poe_monto = models.DecimalField(
-        "Inyector PoE (monto)",
         max_digits=14,
         decimal_places=2,
         default=Decimal("0.00"),
@@ -166,6 +166,21 @@ class Quote(models.Model):
                 continue
         raise IntegrityError("No se pudo generar un número de cotización único.")
 
+    @staticmethod
+    def unit_price_from_catalog_base(
+        base_price: Decimal,
+        quote_currency: str,
+        usd_mxn_rate: Decimal | None,
+    ) -> Decimal:
+        """Precio en moneda de cotización: lista siempre en USD; en MXN multiplica por el tipo de cambio."""
+        base = base_price or Decimal("0.00")
+        if quote_currency == Quote.CURRENCY_MXN:
+            rate = usd_mxn_rate or Decimal("0")
+            if rate <= 0:
+                return base
+            return (base * rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        return base
+
     def generate_quote_number(self) -> str:
         year = timezone.localdate().year
         prefix = f"SCP-{year}-"
@@ -192,8 +207,15 @@ class Quote(models.Model):
         return (st - disc).quantize(Decimal("0.01")) if (st - disc) >= 0 else Decimal("0.00")
 
     @property
+    def products_total_with_tax(self) -> Decimal:
+        """Productos (tras desc. cotización) + IVA. Sin opcionales; coincide con el Total principal del PDF."""
+        p = self.products_total_after_discount
+        t = self.tax_amount or Decimal("0.00")
+        return (p + t).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    @property
     def subtotal_after_discount(self) -> Decimal:
-        """Subtotal total después de descuento (productos + opcionales, base para IVA)."""
+        """Productos (con desc.) + opcionales, excluyendo el IVA desglosado en tax_amount."""
         if self.total is not None and self.tax_amount is not None:
             return (self.total - self.tax_amount).quantize(Decimal("0.01"))
         return Decimal("0.00")
@@ -211,9 +233,6 @@ class Quote(models.Model):
             total += m
         m = getattr(self, "instalacion_monto", None) or Decimal("0.00")
         if getattr(self, "instalacion", False) and m > 0:
-            total += m
-        m = getattr(self, "inyector_poe_monto", None) or Decimal("0.00")
-        if getattr(self, "inyector_poe", False) and m > 0:
             total += m
         m = getattr(self, "poe_monto", None) or Decimal("0.00")
         if getattr(self, "poe", False) and m > 0:
@@ -244,32 +263,29 @@ class Quote(models.Model):
         return result
 
     def get_optional_rows(self) -> list[dict]:
-        """Lista de filas opcionales con partida consecutiva (sigue a los ítems de productos)."""
+        """Filas opcionales para PDF/listados; mismo criterio que get_optional_services_total (checkbox y monto > 0)."""
         base_partida = self.items.count()
         rows = []
-        if getattr(self, "cableado", False) or (getattr(self, "cableado_monto", None) or 0) > 0:
+        m = getattr(self, "cableado_monto", None) or Decimal("0.00")
+        if getattr(self, "cableado", False) and m > 0:
             rows.append({
                 "partida": base_partida + len(rows) + 1,
                 "desc": "Cableado",
-                "monto": getattr(self, "cableado_monto", None) or Decimal("0.00"),
+                "monto": m,
             })
-        if getattr(self, "instalacion", False) or (getattr(self, "instalacion_monto", None) or 0) > 0:
+        m = getattr(self, "instalacion_monto", None) or Decimal("0.00")
+        if getattr(self, "instalacion", False) and m > 0:
             rows.append({
                 "partida": base_partida + len(rows) + 1,
                 "desc": "Instalación",
-                "monto": getattr(self, "instalacion_monto", None) or Decimal("0.00"),
+                "monto": m,
             })
-        if getattr(self, "inyector_poe", False) or (getattr(self, "inyector_poe_monto", None) or 0) > 0:
-            rows.append({
-                "partida": base_partida + len(rows) + 1,
-                "desc": "Inyector PoE",
-                "monto": getattr(self, "inyector_poe_monto", None) or Decimal("0.00"),
-            })
-        if getattr(self, "poe", False) or (getattr(self, "poe_monto", None) or 0) > 0:
+        m = getattr(self, "poe_monto", None) or Decimal("0.00")
+        if getattr(self, "poe", False) and m > 0:
             rows.append({
                 "partida": base_partida + len(rows) + 1,
                 "desc": "PoE",
-                "monto": getattr(self, "poe_monto", None) or Decimal("0.00"),
+                "monto": m,
             })
         return rows
 
@@ -361,25 +377,23 @@ class QuoteItem(models.Model):
             raise ValidationError(
                 {"discount_percent": "El descuento debe ser un porcentaje entre 0 y 100."}
             )
-        if self.quote_id and self.camera_model_id:
-            quote_currency = self.quote.currency
-            model_currency = self.camera_model.currency
-            if quote_currency and model_currency and quote_currency != model_currency:
-                raise ValidationError(
-                    {
-                        "camera_model": (
-                            f"La moneda del modelo ({model_currency}) no coincide con "
-                            f"la moneda de la cotización ({quote_currency})."
-                        )
-                    }
-                )
+
     def save(self, *args, **kwargs):
+        if self.order_in_group is None:
+            self.order_in_group = 0
         if self.quantity is None:
             self.line_subtotal = Decimal("0.00")
             return super().save(*args, **kwargs)
-        # Precio fijo: siempre tomar del catálogo
+        # Precio desde catálogo (USD) aplicando moneda de la cotización
         if self.camera_model_id:
-            self.unit_price = self.camera_model.base_price
+            q = self.quote
+            if q is None and self.quote_id:
+                q = Quote.objects.only("currency", "usd_mxn_rate").get(pk=self.quote_id)
+            self.unit_price = Quote.unit_price_from_catalog_base(
+                self.camera_model.base_price,
+                q.currency if q else "",
+                getattr(q, "usd_mxn_rate", None) if q else None,
+            )
         unit_price = self.unit_price or Decimal("0.00")
         quantity = self.quantity or 0
         discount_pct = getattr(self, "discount_percent", None) or Decimal("0.00")

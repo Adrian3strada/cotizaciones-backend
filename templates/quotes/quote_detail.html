@@ -145,47 +145,44 @@
                 <table class="table">
                     <tr>
                         <th>Subtotal (productos)</th>
-                        <td class="text-right">{{ object.subtotal }}</td>
+                        <td class="text-right">{{ object.subtotal }} {{ object.currency }}</td>
                     </tr>
-                    {% if object.cableado %}
-                    <tr><th>Cableado</th><td class="text-right">{{ object.cableado_monto|default:0 }}</td></tr>
-                    {% endif %}
-                    {% if object.instalacion %}
-                    <tr><th>Instalación</th><td class="text-right">{{ object.instalacion_monto|default:0 }}</td></tr>
-                    {% endif %}
-                    {% if object.inyector_poe %}
-                    <tr><th>Inyector PoE</th><td class="text-right">{{ object.inyector_poe_monto|default:0 }}</td></tr>
-                    {% endif %}
-                    {% if object.poe %}
-                    <tr><th>PoE</th><td class="text-right">{{ object.poe_monto|default:0 }}</td></tr>
-                    {% endif %}
                     {% if object.special_discount_percent and object.special_discount_percent > 0 %}
                     <tr>
                         <th>Descuento ({{ object.special_discount_percent|floatformat:1 }}%)</th>
-                        <td class="text-right">-{{ object.special_discount_amount }}</td>
+                        <td class="text-right">-{{ object.special_discount_amount }} {{ object.currency }}</td>
                     </tr>
                     {% endif %}
                     <tr>
-                        <th>Total (productos)</th>
+                        <th>Total productos (sin IVA)</th>
                         <td class="text-right">{{ object.products_total_after_discount }} {{ object.currency }}</td>
                     </tr>
+                    <tr>
+                        <th>IVA ({{ object.tax_rate }}%)</th>
+                        <td class="text-right">{{ object.tax_amount }} {{ object.currency }}</td>
+                    </tr>
+                    <tr>
+                        <th>Total (productos + IVA)</th>
+                        <td class="text-right">{{ object.products_total_with_tax }} {{ object.currency }}</td>
+                    </tr>
+                    {% if object.cableado %}
+                    <tr><th>Cableado</th><td class="text-right">{{ object.cableado_monto|default:0 }} {{ object.currency }}</td></tr>
+                    {% endif %}
+                    {% if object.instalacion %}
+                    <tr><th>Instalación</th><td class="text-right">{{ object.instalacion_monto|default:0 }} {{ object.currency }}</td></tr>
+                    {% endif %}
+                    {% if object.poe %}
+                    <tr><th>PoE</th><td class="text-right">{{ object.poe_monto|default:0 }} {{ object.currency }}</td></tr>
+                    {% endif %}
                     {% if object.get_optional_services_total %}
                     <tr>
-                        <th>Total (opcionales)</th>
+                        <th>Total opcionales</th>
                         <td class="text-right">{{ object.get_optional_services_total }} {{ object.currency }}</td>
                     </tr>
                     {% endif %}
                     <tr>
-                        <th>Subtotal (antes de IVA)</th>
-                        <td class="text-right">{{ object.subtotal_after_discount }} {{ object.currency }}</td>
-                    </tr>
-                    <tr>
-                        <th>IVA ({{ object.tax_rate }}%)</th>
-                        <td class="text-right">{{ object.tax_amount }}</td>
-                    </tr>
-                    <tr>
-                        <th><strong>Precio más IVA</strong></th>
-                        <td class="text-right"><strong>{{ object.total }}</strong></td>
+                        <th><strong>Total</strong></th>
+                        <td class="text-right"><strong>{{ object.total }} {{ object.currency }}</strong></td>
                     </tr>
                 </table>
             </div>

@@ -28,7 +28,6 @@ class CameraModelTests(TestCase):
             model_code="CAM-001",
             name="Cámara IP",
             base_price=Decimal("5000"),
-            currency=CameraModel.CURRENCY_MXN,
         )
         self.assertEqual(str(c), "Cámara IP")
 
@@ -36,7 +35,6 @@ class CameraModelTests(TestCase):
         c = CameraModel.objects.create(
             model_code="CAM-002",
             base_price=Decimal("3000"),
-            currency=CameraModel.CURRENCY_MXN,
         )
         self.assertEqual(str(c), "CAM-002")
 
@@ -44,7 +42,6 @@ class CameraModelTests(TestCase):
         c = CameraModel.objects.create(
             model_code="CAM-X",
             base_price=Decimal("1000"),
-            currency=CameraModel.CURRENCY_MXN,
         )
         self.assertIn(str(c.pk), c.get_absolute_url())
         self.assertIn("catalogo", c.get_absolute_url())
@@ -58,7 +55,6 @@ class CameraModelViewTests(TestCase):
             model_code="CAM-001",
             name="Cámara Test",
             base_price=Decimal("10000"),
-            currency=CameraModel.CURRENCY_MXN,
         )
 
     def test_list_requires_login(self):
@@ -87,7 +83,6 @@ class CameraModelViewTests(TestCase):
                 "model_code": "CAM-NEW",
                 "name": "Nueva Cámara",
                 "base_price": "15000",
-                "currency": CameraModel.CURRENCY_MXN,
             },
             follow=True,
         )
@@ -113,6 +108,7 @@ class CameraModelViewTests(TestCase):
             sales_user=self.user,
             status=Quote.STATUS_DRAFT,
             currency=Quote.CURRENCY_MXN,
+            usd_mxn_rate=Decimal("20.00"),
         )
         QuoteItem.objects.create(
             quote=quote,

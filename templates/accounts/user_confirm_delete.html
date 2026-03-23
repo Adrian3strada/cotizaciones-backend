@@ -2,6 +2,16 @@
 
 {% block title %}Eliminar usuario{% endblock %}
 
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'quotes:dashboard' %}">Inicio</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'accounts:list' %}">Usuarios</a></li>
+        <li class="breadcrumb-item active">Eliminar</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="content-header">
     <div class="container-fluid">
@@ -9,13 +19,15 @@
     </div>
 </div>
 
-<div class="card card-danger">
+<div class="card card-danger app-confirm-card">
     <div class="card-body">
         <p>¿Seguro que deseas eliminar el usuario <strong>{{ object.username }}</strong>?</p>
         <form method="post">
             {% csrf_token %}
-            <button type="submit" class="btn btn-danger">Eliminar</button>
-            <a class="btn btn-secondary" href="{% url 'accounts:list' %}">Cancelar</a>
+            <div class="app-form-actions border-0 mt-0 pt-0">
+                <button type="submit" class="btn btn-danger px-4">Eliminar</button>
+                <a class="btn btn-secondary px-4" href="{% url 'accounts:list' %}">Cancelar</a>
+            </div>
         </form>
     </div>
 </div>

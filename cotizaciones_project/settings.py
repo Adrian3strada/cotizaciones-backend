@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 import warnings
+from decimal import Decimal
 
 # Suprimir aviso de dependencias de requests (urllib3/charset-normalizer)
 warnings.filterwarnings("ignore", message=".*doesn't match a supported version.*", module="requests")
@@ -274,6 +275,9 @@ REST_FRAMEWORK = {
     },
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
+
+# Tipo de cambio por defecto (MXN por 1 USD) al elegir moneda MXN en nueva cotización (editable en el formulario)
+QUOTE_DEFAULT_USD_MXN_RATE = Decimal(os.environ.get("QUOTE_DEFAULT_USD_MXN_RATE", "20.00"))
 
 # Motor del PDF de cotizaciones: "reportlab" (coordenadas en código) o "weasyprint" (template HTML)
 QUOTE_PDF_ENGINE = os.environ.get("QUOTE_PDF_ENGINE", "reportlab")

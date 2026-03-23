@@ -3,13 +3,6 @@ from django.urls import reverse
 
 
 class CameraModel(models.Model):
-    CURRENCY_MXN = "MXN"
-    CURRENCY_USD = "USD"
-    CURRENCY_CHOICES = [
-        (CURRENCY_MXN, "MXN"),
-        (CURRENCY_USD, "USD"),
-    ]
-
     brand = models.CharField("Marca", max_length=100, blank=True)
     model_code = models.CharField("Código de modelo", max_length=100, unique=True)
     name = models.CharField("Nombre", max_length=255, blank=True)
@@ -17,8 +10,12 @@ class CameraModel(models.Model):
     datasheet_file = models.FileField(
         "Ficha técnica", upload_to="datasheets/", blank=True, null=True
     )
-    base_price = models.DecimalField("Precio base", max_digits=14, decimal_places=2)
-    currency = models.CharField("Moneda", max_length=3, choices=CURRENCY_CHOICES)
+    base_price = models.DecimalField(
+        "Precio base (USD)",
+        max_digits=14,
+        decimal_places=2,
+        help_text="Lista de precios siempre en dólares. En cotizaciones en MXN se convierte con el tipo de cambio de la cotización.",
+    )
     is_active = models.BooleanField("Activo", default=True)
     created_at = models.DateTimeField("Creado", auto_now_add=True)
     updated_at = models.DateTimeField("Actualizado", auto_now=True)

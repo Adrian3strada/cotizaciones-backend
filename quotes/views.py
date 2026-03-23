@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required, permission_required
@@ -14,7 +15,7 @@ from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, TemplateView
 import json
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 from dateutil.relativedelta import relativedelta
@@ -26,19 +27,15 @@ from catalog.models import CameraModel
 
 logger = logging.getLogger(__name__)
 from customers.models import Customer
+from quotes.access import user_sees_only_own_quotes
 from quotes.forms import QuoteForm, QuoteItemFormSet
 from quotes.models import Quote, QuoteItem
 from quotes.signals import quote_item_deleted, quote_item_saved
 
 
 def _user_sees_only_own_quotes(request):
-    """True si el usuario solo debe ver sus propias cotizaciones (Ventas).
-    False si ve todas: superuser o Solo_lectura (solo view, sin add/change)."""
-    if request.user.is_superuser:
-        return False
-    if request.user.has_perm("quotes.add_quote") or request.user.has_perm("quotes.change_quote"):
-        return True
-    return False
+    """Delega en quotes.access.user_sees_only_own_quotes."""
+    return user_sees_only_own_quotes(request.user)
 
 
 def _get_quote_for_user(request, pk):
@@ -47,6 +44,33 @@ def _get_quote_for_user(request, pk):
     if _user_sees_only_own_quotes(request):
         qs = qs.filter(sales_user=request.user)
     return get_object_or_404(qs, pk=pk)
+
+
+def _item_formset_quote_args(request, quote=None):
+    """Moneda y TC para validar precios de ítems (POST) o para formulario (GET)."""
+    if request.method == "POST":
+        currency = (request.POST.get("currency") or "").strip() or None
+        raw = (request.POST.get("usd_mxn_rate") or "").strip()
+        rate = None
+        if raw:
+            try:
+                rate = Decimal(raw)
+            except InvalidOperation:
+                rate = None
+        return {"quote_currency": currency, "usd_mxn_rate": rate}
+    if quote:
+        return {"quote_currency": quote.currency, "usd_mxn_rate": quote.usd_mxn_rate}
+    return {"quote_currency": Quote.CURRENCY_USD, "usd_mxn_rate": None}
+
+
+def _customer_quote_currency_json():
+    return json.dumps(
+        {str(c.pk): c.default_quote_currency() for c in Customer.objects.only("id", "country_code")}
+    )
+
+
+def _default_usd_mxn_rate_display():
+    return str(getattr(settings, "QUOTE_DEFAULT_USD_MXN_RATE", Decimal("20.00")))
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -303,28 +327,6 @@ def _count_valid_items(formset):
     return count
 
 
-def _validate_item_currencies(formset, quote_currency):
-    if not quote_currency:
-        return False
-    has_errors = False
-    for form in formset:
-        if not getattr(form, "cleaned_data", None):
-            continue
-        if form.cleaned_data.get("DELETE"):
-            continue
-        camera_model = form.cleaned_data.get("camera_model")
-        if camera_model and camera_model.currency and camera_model.currency != quote_currency:
-            form.add_error(
-                "camera_model",
-                (
-                    f"La moneda del modelo ({camera_model.currency}) no coincide con "
-                    f"la moneda de la cotización ({quote_currency})."
-                ),
-            )
-            has_errors = True
-    return has_errors
-
-
 def _build_file_uri(path_value):
     if not path_value:
         return ""
@@ -410,13 +412,11 @@ def _validate_quote_action(quote, require_items=True):
 def quote_create(request):
     if request.method == "POST":
         form = QuoteForm(request.POST)
-        formset = QuoteItemFormSet(request.POST)
+        formset = QuoteItemFormSet(request.POST, **_item_formset_quote_args(request))
         if form.is_valid() and formset.is_valid():
             quote = form.save(commit=False)
             quote.sales_user = request.user
-            if _validate_item_currencies(formset, quote.currency):
-                pass
-            elif quote.status == Quote.STATUS_SENT and _count_valid_items(formset) == 0:
+            if quote.status == Quote.STATUS_SENT and _count_valid_items(formset) == 0:
                 form.add_error("status", "No puedes enviar una cotización sin items.")
             else:
                 with transaction.atomic():
@@ -435,10 +435,14 @@ def quote_create(request):
                 return redirect("quotes:detail", pk=quote.pk)
     else:
         form = QuoteForm(initial={"status": Quote.STATUS_DRAFT})
-        formset = QuoteItemFormSet()
+        formset = QuoteItemFormSet(**_item_formset_quote_args(request))
     optional_service_fields = {
-        "cableado", "cableado_monto", "instalacion", "instalacion_monto",
-        "inyector_poe", "inyector_poe_monto", "poe", "poe_monto",
+        "cableado",
+        "cableado_monto",
+        "instalacion",
+        "instalacion_monto",
+        "poe",
+        "poe_monto",
     }
     camera_model_prices = json.dumps({
         str(pk): str(price)
@@ -453,6 +457,8 @@ def quote_create(request):
             "is_edit": False,
             "optional_service_fields": optional_service_fields,
             "camera_model_prices": camera_model_prices,
+            "customer_quote_currency_json": _customer_quote_currency_json(),
+            "default_usd_mxn_rate": _default_usd_mxn_rate_display(),
         },
     )
 
@@ -463,12 +469,14 @@ def quote_update(request, pk):
     quote = _get_quote_for_user(request, pk)
     if request.method == "POST":
         form = QuoteForm(request.POST, instance=quote)
-        formset = QuoteItemFormSet(request.POST, instance=quote)
+        formset = QuoteItemFormSet(
+            request.POST,
+            instance=quote,
+            **_item_formset_quote_args(request, quote=quote),
+        )
         if form.is_valid() and formset.is_valid():
             updated_quote = form.save(commit=False)
-            if _validate_item_currencies(formset, updated_quote.currency):
-                pass
-            elif updated_quote.status == Quote.STATUS_SENT and _count_valid_items(formset) == 0:
+            if updated_quote.status == Quote.STATUS_SENT and _count_valid_items(formset) == 0:
                 form.add_error("status", "No puedes enviar una cotización sin items.")
             else:
                 with transaction.atomic():
@@ -486,10 +494,14 @@ def quote_update(request, pk):
                 return redirect("quotes:detail", pk=quote.pk)
     else:
         form = QuoteForm(instance=quote)
-        formset = QuoteItemFormSet(instance=quote)
+        formset = QuoteItemFormSet(instance=quote, **_item_formset_quote_args(request, quote=quote))
     optional_service_fields = {
-        "cableado", "cableado_monto", "instalacion", "instalacion_monto",
-        "inyector_poe", "inyector_poe_monto", "poe", "poe_monto",
+        "cableado",
+        "cableado_monto",
+        "instalacion",
+        "instalacion_monto",
+        "poe",
+        "poe_monto",
     }
     camera_model_prices = json.dumps({
         str(pk): str(price)
@@ -505,6 +517,8 @@ def quote_update(request, pk):
             "quote": quote,
             "optional_service_fields": optional_service_fields,
             "camera_model_prices": camera_model_prices,
+            "customer_quote_currency_json": _customer_quote_currency_json(),
+            "default_usd_mxn_rate": _default_usd_mxn_rate_display(),
         },
     )
 
@@ -564,14 +578,13 @@ def quote_duplicate(request, pk):
             sales_user=request.user,
             status=Quote.STATUS_DRAFT,
             currency=quote.currency,
+            usd_mxn_rate=quote.usd_mxn_rate,
             tax_rate=quote.tax_rate,
             special_discount_percent=quote.special_discount_percent,
             cableado=quote.cableado,
             cableado_monto=quote.cableado_monto or Decimal("0.00"),
             instalacion=quote.instalacion,
             instalacion_monto=quote.instalacion_monto or Decimal("0.00"),
-            inyector_poe=quote.inyector_poe,
-            inyector_poe_monto=quote.inyector_poe_monto or Decimal("0.00"),
             poe=quote.poe,
             poe_monto=quote.poe_monto or Decimal("0.00"),
             notes=quote.notes or "",
