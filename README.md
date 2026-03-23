@@ -161,6 +161,22 @@ Para que un usuario tenga permisos según su rol:
 - **Archivos MEDIA**: con `DEBUG=False`, Django no sirve archivos subidos. Configura Nginx (ver abajo) o un CDN para servir la carpeta `media/`.
 - **NGROK_HOSTS** (solo dev): si usas ngrok, define `NGROK_HOSTS=abc123.ngrok-free.app` para permitir el túnel.
 
+### Seguridad HTTP (con `DEBUG=False`)
+
+Django activa automáticamente cookies seguras (`SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`), cabeceras `X-Forwarded-Proto` / host del proxy, redirección HTTPS y **HSTS** (un año por defecto). Variables opcionales:
+
+| Variable | Uso |
+|----------|-----|
+| `SECURE_SSL_REDIRECT` | `False` solo si el proxy ya fuerza HTTPS y ves bucles de redirección. Por defecto `True`. |
+| `SECURE_HSTS_SECONDS` | Segundos de HSTS; `0` desactiva HSTS (solo si aún no todo es HTTPS). |
+| `SECURE_HSTS_INCLUDE_SUBDOMAINS` | `True` si quieres HSTS en subdominios (solo si todos usan HTTPS). |
+| `SECURE_HSTS_PRELOAD` | `True` solo si vas a enviar el dominio a la lista de preload de navegadores. |
+| `SESSION_COOKIE_AGE` | Segundos de vida de la sesión (mínimo 300 si lo defines). |
+| `DRF_ALLOW_BASIC_AUTH` | `True` para permitir HTTP Basic en la API en producción (desactivado por defecto: usa **Token**). |
+| `OPENAPI_PUBLIC` | `true` para dejar Swagger/ReDoc/schema **sin** login de staff en producción (por defecto solo **staff**). |
+
+Recomendaciones adicionales: WAF o **Cloudflare** delante, contraseñas fuertes, 2FA en el panel admin (extensión o proveedor), backups cifrados de la base de datos y revisar permisos de grupos (`setup_groups`).
+
 ### Archivos MEDIA con Nginx
 
 En tu bloque `server` de Nginx, añade:
@@ -199,9 +215,9 @@ Endpoints para integración con ERP/CRM (requiere autenticación):
 - `GET /api/catalog/` – Catálogo de modelos de cámara
 - `POST /api/auth-token/` – Obtener token (body: `username`, `password`)
 
-Autenticación: Token (recomendado para integraciones), sesión web o Basic Auth.
+Autenticación: **Token** (recomendado para integraciones), sesión web; en producción HTTP Basic está desactivado salvo `DRF_ALLOW_BASIC_AUTH=True`.
 
-Documentación OpenAPI: `/api/schema/`, Swagger UI: `/api/schema/swagger-ui/`, ReDoc: `/api/schema/redoc/`
+Documentación OpenAPI: `/api/schema/`, Swagger UI: `/api/schema/swagger-ui/`, ReDoc: `/api/schema/redoc/`. En producción solo usuarios **staff** salvo `OPENAPI_PUBLIC=true`.
 
 ## Estructura
 

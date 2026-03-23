@@ -14,9 +14,12 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+import os
+
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import logout
 from django.contrib.auth import views as auth_views
 from django.shortcuts import redirect
@@ -40,6 +43,14 @@ def handler500(request):
     return render(request, "500.html", status=500)
 
 
+def _openapi_view(view_cls, **initkwargs):
+    """En producción, Swagger/ReDoc/schema solo para staff salvo OPENAPI_PUBLIC=true."""
+    view = view_cls.as_view(**initkwargs)
+    if settings.DEBUG or os.environ.get("OPENAPI_PUBLIC", "").lower() in ("1", "true", "yes"):
+        return view
+    return staff_member_required(view)
+
+
 urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', logout_view, name='logout'),
@@ -48,9 +59,17 @@ urlpatterns = [
     ), name='password_reset'),
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
-    path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    path("api/schema/", _openapi_view(SpectacularAPIView), name="schema"),
+    path(
+        "api/schema/swagger-ui/",
+        _openapi_view(SpectacularSwaggerView, url_name="schema"),
+        name="swagger-ui",
+    ),
+    path(
+        "api/schema/redoc/",
+        _openapi_view(SpectacularRedocView, url_name="schema"),
+        name="redoc",
+    ),
     path('', include('quotes.urls')),
     path('clientes/', include('customers.urls')),
     path('catalogo/', include('catalog.urls')),

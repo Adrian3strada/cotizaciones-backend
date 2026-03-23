@@ -250,18 +250,48 @@ LOGOUT_REDIRECT_URL = 'login'
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    # Detrás de proxy (Railway, Nginx, etc.): Django debe ver HTTPS y host real
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    USE_X_FORWARDED_HOST = True
+    # Redirigir HTTP→HTTPS (el proxy suele enviar X-Forwarded-Proto)
+    SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "True") == "True"
+    # HSTS: solo si todo el sitio es HTTPS (deshabilitar con SECURE_HSTS_SECONDS=0)
+    _hsts = int(os.environ.get("SECURE_HSTS_SECONDS", "31536000"))
+    if _hsts > 0:
+        SECURE_HSTS_SECONDS = _hsts
+        SECURE_HSTS_INCLUDE_SUBDOMAINS = (
+            os.environ.get("SECURE_HSTS_INCLUDE_SUBDOMAINS", "False") == "True"
+        )
+        SECURE_HSTS_PRELOAD = os.environ.get("SECURE_HSTS_PRELOAD", "False") == "True"
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = "same-origin"
+    # Más estricto que SAMEORIGIN (evita embeber la app en iframes de otros sitios)
+    X_FRAME_OPTIONS = "DENY"
+
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_HTTPONLY = True
+# Opcional: caducidad de sesión en segundos (2 semanas por defecto Django); 0 = solo al cerrar navegador
+_session_age = os.environ.get("SESSION_COOKIE_AGE")
+if _session_age is not None:
+    try:
+        SESSION_COOKIE_AGE = max(300, int(_session_age))
+    except ValueError:
+        pass
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Django REST Framework
+# Basic Auth envía usuario/contraseña en cada petición; desactivado en prod salvo DRF_ALLOW_BASIC_AUTH=True
+_drf_auth = [
+    "rest_framework.authentication.TokenAuthentication",
+    "rest_framework.authentication.SessionAuthentication",
+]
+if DEBUG or os.environ.get("DRF_ALLOW_BASIC_AUTH", "False") == "True":
+    _drf_auth.append("rest_framework.authentication.BasicAuthentication")
+
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
-    ],
+    "DEFAULT_AUTHENTICATION_CLASSES": _drf_auth,
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 50,

@@ -1100,6 +1100,10 @@ body {
     background: #0b111b;
 }
 
+.auth-body--quotes {
+    font-family: var(--font-sans);
+}
+
 .auth-page {
     min-height: 100vh;
     display: flex;
@@ -1111,7 +1115,334 @@ body {
     display: flex;
 }
 
-.auth-left {
+.auth-layout--quotes {
+    flex-direction: row;
+    width: 100%;
+    align-items: stretch;
+}
+
+.auth-visual {
+    flex: 1;
+    position: relative;
+    min-height: 360px;
+    background: var(--brand-dark);
+    overflow: hidden;
+}
+
+/* Fondo tipo hoja / tabla de cotización (sin WebGL) */
+.auth-visual--quotes .auth-quote-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+/* Segunda rejilla más fina, sentido contrario (profundidad tipo tabla) */
+.auth-visual--quotes .auth-quote-bg::after {
+    content: "";
+    position: absolute;
+    inset: -25%;
+    background-image:
+        linear-gradient(rgba(72, 146, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(72, 146, 255, 0.05) 1px, transparent 1px);
+    background-size: 24px 24px;
+    animation: auth-quote-grid-drift-reverse 70s linear infinite;
+    opacity: 0.5;
+    mask-image: radial-gradient(ellipse 80% 70% at 48% 42%, #000 25%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 70% at 48% 42%, #000 25%, transparent 70%);
+    pointer-events: none;
+}
+
+@keyframes auth-quote-grid-drift-reverse {
+    to {
+        transform: translate(48px, 48px);
+    }
+}
+
+.auth-quote-grid {
+    position: absolute;
+    inset: -30%;
+    background-image:
+        linear-gradient(rgba(28, 119, 195, 0.11) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(28, 119, 195, 0.09) 1px, transparent 1px);
+    background-size: 56px 32px;
+    background-position: 0 0;
+    animation: auth-quote-grid-drift 90s linear infinite;
+    opacity: 0.65;
+    mask-image: radial-gradient(ellipse 85% 75% at 50% 45%, #000 20%, transparent 72%);
+    -webkit-mask-image: radial-gradient(ellipse 85% 75% at 50% 45%, #000 20%, transparent 72%);
+}
+
+@keyframes auth-quote-grid-drift {
+    to {
+        transform: translate(-56px, -32px);
+    }
+}
+
+.auth-quote-glow {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 120% 80% at 15% 20%, rgba(28, 119, 195, 0.22), transparent 55%),
+        radial-gradient(ellipse 90% 70% at 85% 75%, rgba(24, 169, 153, 0.14), transparent 50%),
+        radial-gradient(ellipse 60% 50% at 50% 100%, rgba(14, 90, 138, 0.35), transparent 45%);
+    animation: auth-quote-glow-pulse 16s ease-in-out infinite;
+    pointer-events: none;
+    transform-origin: 50% 50%;
+}
+
+@keyframes auth-quote-glow-pulse {
+    0% {
+        opacity: 0.8;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.98;
+        transform: scale(1.015);
+    }
+
+    100% {
+        opacity: 0.88;
+        transform: scale(1);
+    }
+}
+
+/* Silueta de “documento” de cotización */
+.auth-quote-paper {
+    position: absolute;
+    top: 12%;
+    right: 8%;
+    width: min(220px, 38vw);
+    aspect-ratio: 1 / 1.25;
+    border-radius: 12px;
+    border: 1px solid rgba(86, 127, 175, 0.35);
+    background: linear-gradient(165deg, rgba(12, 22, 36, 0.92) 0%, rgba(8, 15, 26, 0.88) 100%);
+    box-shadow:
+        0 24px 48px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    padding: 14px 16px;
+    z-index: 1;
+    animation:
+        auth-quote-paper-float 12s ease-in-out infinite,
+        auth-quote-paper-glow 5s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes auth-quote-paper-glow {
+
+    0%,
+    100% {
+        box-shadow:
+            0 24px 48px rgba(0, 0, 0, 0.35),
+            inset 0 1px 0 rgba(255, 255, 255, 0.06),
+            0 0 0 0 rgba(28, 119, 195, 0);
+    }
+
+    50% {
+        box-shadow:
+            0 28px 56px rgba(0, 0, 0, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.08),
+            0 0 28px rgba(28, 119, 195, 0.12);
+    }
+}
+
+@keyframes auth-quote-paper-float {
+
+    0%,
+    100% {
+        transform: translateY(0) rotate(-1deg);
+    }
+
+    50% {
+        transform: translateY(-10px) rotate(0.5deg);
+    }
+}
+
+.auth-quote-paper-head {
+    height: 8px;
+    width: 55%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, rgba(28, 119, 195, 0.65), rgba(24, 169, 153, 0.4), rgba(28, 119, 195, 0.55));
+    background-size: 200% 100%;
+    margin-bottom: 14px;
+    animation: auth-quote-head-shift 7s ease-in-out infinite;
+}
+
+@keyframes auth-quote-head-shift {
+
+    0%,
+    100% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+.auth-quote-paper-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.auth-quote-paper-rows span {
+    display: block;
+    height: 5px;
+    border-radius: 3px;
+    background: rgba(234, 242, 255, 0.12);
+    animation: auth-quote-row-pulse 3.8s ease-in-out infinite;
+    transform-origin: left center;
+}
+
+.auth-quote-paper-rows span:nth-child(1) {
+    width: 100%;
+    animation-delay: 0s;
+}
+
+.auth-quote-paper-rows span:nth-child(2) {
+    width: 92%;
+    animation-delay: 0.35s;
+}
+
+.auth-quote-paper-rows span:nth-child(3) {
+    width: 88%;
+    animation-delay: 0.7s;
+}
+
+.auth-quote-paper-rows span:nth-child(4) {
+    width: 70%;
+    animation-delay: 1.05s;
+}
+
+@keyframes auth-quote-row-pulse {
+
+    0%,
+    100% {
+        opacity: 0.55;
+        transform: scaleX(1);
+    }
+
+    50% {
+        opacity: 0.95;
+        transform: scaleX(1.02);
+    }
+}
+
+.auth-quote-paper-total {
+    position: relative;
+    height: 10px;
+    width: 42%;
+    margin-left: auto;
+    border-radius: 4px;
+    background: linear-gradient(90deg, rgba(24, 169, 153, 0.45), rgba(28, 119, 195, 0.4));
+    overflow: hidden;
+}
+
+.auth-quote-paper-total::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.22) 50%, transparent 65%);
+    animation: auth-quote-total-shine 3.2s ease-in-out infinite;
+}
+
+@keyframes auth-quote-total-shine {
+
+    0% {
+        transform: translateX(-120%);
+    }
+
+    40%,
+    100% {
+        transform: translateX(120%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .auth-visual--quotes .auth-quote-bg::after,
+    .auth-quote-grid,
+    .auth-quote-glow,
+    .auth-quote-paper,
+    .auth-quote-paper-head,
+    .auth-quote-paper-rows span,
+    .auth-quote-paper-total::after,
+    .auth-visual-brand .auth-brand,
+    .auth-visual-brand .auth-product-line,
+    .auth-visual-brand .auth-tagline,
+    .auth-layout--quotes .auth-aside {
+        animation: none !important;
+    }
+
+    .auth-quote-grid,
+    .auth-visual--quotes .auth-quote-bg::after {
+        transform: none;
+    }
+
+    .auth-quote-paper-total::after {
+        opacity: 0;
+    }
+
+    .auth-visual-brand .auth-brand,
+    .auth-visual-brand .auth-product-line,
+    .auth-visual-brand .auth-tagline,
+    .auth-layout--quotes .auth-aside {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.auth-visual-brand {
+    position: absolute;
+    left: 44px;
+    bottom: 48px;
+    z-index: 2;
+    max-width: min(420px, 90%);
+    pointer-events: none;
+}
+
+@keyframes auth-brand-reveal {
+    from {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.auth-visual-brand .auth-brand {
+    margin-bottom: 6px;
+    animation: auth-brand-reveal 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
+}
+
+.auth-product-line {
+    margin: 0 0 10px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(28, 119, 195, 0.95);
+    animation: auth-brand-reveal 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
+}
+
+.auth-tagline {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--brand-muted);
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+    max-width: 26em;
+    animation: auth-brand-reveal 0.95s cubic-bezier(0.22, 1, 0.36, 1) 0.38s both;
+}
+
+.auth-left,
+.auth-aside {
     background: rgba(12, 19, 30, 0.92);
     min-width: 300px;
     max-width: 440px;
@@ -1121,8 +1452,29 @@ body {
     padding: 52px 44px;
     box-shadow: 0 18px 40px rgba(7, 12, 20, 0.45);
     z-index: 2;
-    border-right: 1px solid rgba(86, 127, 175, 0.18);
     color: #eaf2ff;
+}
+
+.auth-layout--quotes .auth-aside {
+    border-left: 1px solid rgba(86, 127, 175, 0.18);
+    border-right: none;
+    animation: auth-aside-reveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+
+@keyframes auth-aside-reveal {
+    from {
+        opacity: 0;
+        transform: translateX(28px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.auth-left {
+    border-right: 1px solid rgba(86, 127, 175, 0.18);
 }
 
 .auth-panel {
@@ -1143,6 +1495,15 @@ body {
     letter-spacing: 2px;
     margin-bottom: 6px;
     color: #eaf2ff;
+}
+
+.auth-form-kicker {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(28, 119, 195, 0.9);
+    margin-bottom: 6px;
 }
 
 .auth-welcome {
@@ -1222,6 +1583,7 @@ body {
     background: linear-gradient(90deg, #0f4c81, #1c77c3);
 }
 
+
 .auth-forgot {
     display: inline-block;
     margin-top: 16px;
@@ -1267,11 +1629,18 @@ body {
         flex-direction: column;
     }
 
-    .auth-left {
+    .auth-layout--quotes .auth-visual {
+        display: none;
+    }
+
+    .auth-left,
+    .auth-aside {
         max-width: none;
         width: 100%;
         min-height: 60vh;
         box-shadow: none;
+        border-left: none !important;
+        border-right: none !important;
     }
 
     .auth-right {
@@ -2225,7 +2594,8 @@ body {
         grid-template-columns: 1fr;
     }
 
-    .auth-left {
+    .auth-left,
+    .auth-aside {
         width: 100%;
         max-width: none;
         min-height: auto;
