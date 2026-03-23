@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 import os
+import sys
 import warnings
 from decimal import Decimal
 
@@ -38,6 +39,14 @@ SECRET_KEY = _secret or "django-insecure-dev-only-change-in-production"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "True") == "True"
+
+
+def _running_tests():
+    """manage.py test / coverage run … test: evita SSL redirect y manifest estáticos."""
+    if os.environ.get("DJANGO_RUNNING_TESTS", "").lower() in ("1", "true", "yes"):
+        return True
+    return len(sys.argv) > 1 and sys.argv[1] == "test"
+
 
 _allowed_hosts_env = os.environ.get("ALLOWED_HOSTS")
 if _allowed_hosts_env:
@@ -237,7 +246,11 @@ STATIC_URL = 'static/'
 
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = (
+    "django.contrib.staticfiles.storage.StaticFilesStorage"
+    if _running_tests()
+    else "whitenoise.storage.CompressedManifestStaticFilesStorage"
+)
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
@@ -248,13 +261,16 @@ LOGOUT_REDIRECT_URL = 'login'
 # Cookies seguras para HTTPS (Railway sirve por HTTPS)
 # Solo en producción (DEBUG=False) para que el login funcione correctamente
 if not DEBUG:
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    _tests = _running_tests()
+    SESSION_COOKIE_SECURE = not _tests
+    CSRF_COOKIE_SECURE = not _tests
     # Detrás de proxy (Railway, Nginx, etc.): Django debe ver HTTPS y host real
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     USE_X_FORWARDED_HOST = True
-    # Redirigir HTTP→HTTPS (el proxy suele enviar X-Forwarded-Proto)
-    SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "True") == "True"
+    # Redirigir HTTP→HTTPS (el test client usa HTTP; en tests se desactiva)
+    SECURE_SSL_REDIRECT = (not _tests) and (
+        os.environ.get("SECURE_SSL_REDIRECT", "True") == "True"
+    )
     # HSTS: solo si todo el sitio es HTTPS (deshabilitar con SECURE_HSTS_SECONDS=0)
     _hsts = int(os.environ.get("SECURE_HSTS_SECONDS", "31536000"))
     if _hsts > 0:
