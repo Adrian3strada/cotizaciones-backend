@@ -1372,7 +1372,10 @@ body {
     .auth-visual-brand .auth-brand,
     .auth-visual-brand .auth-product-line,
     .auth-visual-brand .auth-tagline,
-    .auth-layout--quotes .auth-aside {
+    .auth-layout--quotes .auth-aside,
+    .auth-hero-title,
+    .auth-feature-item,
+    .auth-visual-chips {
         animation: none !important;
     }
 
@@ -1388,10 +1391,135 @@ body {
     .auth-visual-brand .auth-brand,
     .auth-visual-brand .auth-product-line,
     .auth-visual-brand .auth-tagline,
-    .auth-layout--quotes .auth-aside {
+    .auth-layout--quotes .auth-aside,
+    .auth-hero-title,
+    .auth-feature-item,
+    .auth-visual-chips {
         opacity: 1;
         transform: none;
     }
+}
+
+@media (min-width: 993px) and (max-width: 1200px) {
+    .auth-visual-hero {
+        right: min(38%, 280px);
+        max-width: 460px;
+    }
+
+    .auth-feature-text {
+        font-size: 12px;
+    }
+}
+
+/* Panel izquierdo: titular, lista de beneficios y chips */
+.auth-visual-hero {
+    position: absolute;
+    top: 9%;
+    left: 44px;
+    right: min(42%, 340px);
+    z-index: 2;
+    max-width: 540px;
+    pointer-events: none;
+}
+
+.auth-hero-kicker {
+    margin: 0 0 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(72, 146, 255, 0.95);
+}
+
+.auth-hero-title {
+    margin: 0 0 22px;
+    font-size: clamp(1.25rem, 2.1vw, 1.65rem);
+    font-weight: 700;
+    line-height: 1.3;
+    color: #f0f6ff;
+    text-shadow: 0 1px 24px rgba(0, 0, 0, 0.35);
+    animation: auth-brand-reveal 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.04s both;
+}
+
+.auth-feature-list {
+    margin: 0 0 20px;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.auth-feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(12, 24, 40, 0.72) 0%, rgba(8, 16, 28, 0.55) 100%);
+    border: 1px solid rgba(86, 127, 175, 0.28);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    animation: auth-brand-reveal 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.auth-feature-item:nth-child(1) {
+    animation-delay: 0.12s;
+}
+
+.auth-feature-item:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.auth-feature-item:nth-child(3) {
+    animation-delay: 0.28s;
+}
+
+.auth-feature-item:nth-child(4) {
+    animation-delay: 0.36s;
+}
+
+.auth-feature-icon {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: linear-gradient(145deg, rgba(28, 119, 195, 0.35), rgba(24, 169, 153, 0.22));
+    color: #b8dcff;
+    font-size: 16px;
+}
+
+.auth-feature-text {
+    font-size: 13px;
+    line-height: 1.45;
+    color: rgba(234, 242, 255, 0.88);
+}
+
+.auth-feature-text strong {
+    color: #fff;
+    font-weight: 600;
+}
+
+.auth-visual-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    animation: auth-brand-reveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.44s both;
+}
+
+.auth-chip {
+    display: inline-block;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgba(200, 224, 255, 0.92);
+    background: rgba(28, 119, 195, 0.18);
+    border: 1px solid rgba(72, 146, 255, 0.35);
+    border-radius: 999px;
 }
 
 .auth-visual-brand {
