@@ -27,7 +27,7 @@ tinycss2==1.4.0
 urllib3==2.2.3
 weasyprint==62.2
 whitenoise==6.8.2
-zopfli==0.2.3
+zopfli==0.4.0
 
 # Testing
 coverage[toml]==7.6.0

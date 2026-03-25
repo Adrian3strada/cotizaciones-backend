@@ -95,7 +95,6 @@
         <table class="table table-hover">
             <thead>
                 <tr>
-                    <th>Grupo</th>
                     <th>Modelo</th>
                     <th>Cantidad</th>
                     <th>Precio unit. (fijo)</th>
@@ -104,36 +103,17 @@
                 </tr>
             </thead>
             <tbody>
-                {% for group_name, items in object.get_grouped_items %}
-                {% if group_name %}
-                <tr class="table-secondary">
-                    <td colspan="6" class="font-weight-bold">{{ group_name }}</td>
-                </tr>
-                {% for item in items %}
+                {% for item in object.items.all %}
                 <tr>
-                    <td data-label="Grupo"></td>
                     <td data-label="Modelo">{{ item.camera_model }}</td>
                     <td data-label="Cantidad">{{ item.quantity }}</td>
                     <td data-label="Precio unit.">{{ item.unit_price }}</td>
                     <td data-label="Desc. %">{{ item.discount_percent|floatformat:1 }}%</td>
                     <td data-label="Subtotal">{{ item.line_subtotal }}</td>
                 </tr>
-                {% endfor %}
-                {% else %}
-                {% for item in items %}
-                <tr>
-                    <td data-label="Grupo" class="text-muted">—</td>
-                    <td data-label="Modelo">{{ item.camera_model }}</td>
-                    <td data-label="Cantidad">{{ item.quantity }}</td>
-                    <td data-label="Precio unit.">{{ item.unit_price }}</td>
-                    <td data-label="Desc. %">{{ item.discount_percent|floatformat:1 }}%</td>
-                    <td data-label="Subtotal">{{ item.line_subtotal }}</td>
-                </tr>
-                {% endfor %}
-                {% endif %}
                 {% empty %}
                 <tr>
-                    <td colspan="6">Sin items.</td>
+                    <td colspan="5">Sin items.</td>
                 </tr>
                 {% endfor %}
             </tbody>

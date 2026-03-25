@@ -1,9 +1,8 @@
 from django.apps import AppConfig
 
-
 class QuotesConfig(AppConfig):
-    default_auto_field = "django.db.models.BigAutoField"
-    name = "quotes"
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'quotes'
 
     def ready(self):
-        from quotes import signals  # noqa: F401
+        from quotes import signals
