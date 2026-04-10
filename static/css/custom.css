@@ -459,6 +459,17 @@ body {
     margin-bottom: 0.35rem;
 }
 
+.app-form-card .form-group > .app-form-label-spacer {
+    display: block;
+    visibility: hidden;
+    user-select: none;
+    pointer-events: none;
+    font-weight: 600;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    margin-bottom: 0.35rem;
+}
+
 .theme-dark .app-form-card .form-text.text-muted {
     color: rgba(234, 242, 255, 0.82) !important;
     line-height: 1.45;
@@ -505,6 +516,10 @@ body {
     font-weight: 600;
     color: var(--brand-text);
     line-height: 1.35;
+}
+
+.contact-form .app-form-check-row--contact-primary {
+    margin-bottom: 0;
 }
 
 .app-form-actions,

@@ -76,9 +76,10 @@
                         {% for error in form.position.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                     </div>
                 </div>
-                <div class="col-md-6 d-flex align-items-end">
-                    <div class="form-group w-100">
-                        <div class="app-form-check-row">
+                <div class="col-md-6">
+                    <div class="form-group mb-md-0">
+                        <span class="app-form-label-spacer" aria-hidden="true">{{ form.position.label }}</span>
+                        <div class="app-form-check-row app-form-check-row--contact-primary">
                             {{ form.is_primary }}
                             <label class="mb-0" for="{{ form.is_primary.id_for_label }}">{{ form.is_primary.label }}</label>
                         </div>
